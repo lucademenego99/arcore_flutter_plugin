@@ -20,7 +20,7 @@ class ArCoreFaceController {
   StringResultHandler onError;
   Vector3 _facesNodes;
 
-  String get facesNodes {
+  Vector3 get facesNodes {
     return _facesNodes;
   }
 
