@@ -54,6 +54,10 @@ class ArCoreFaceController {
       'skin3DModelFilename': skin3DModelFilename
     });
   }
+  
+  Future<ArCoreNode> getFacesNodes() {
+    return _channel.invokeMethod('getFacesNodes');
+  }
 
   void dispose() {
     _channel?.invokeMethod<void>('dispose');
