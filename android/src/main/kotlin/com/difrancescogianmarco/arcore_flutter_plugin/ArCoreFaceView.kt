@@ -89,7 +89,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 "getFacesNodes" -> {
                     val list = faceNodeMap.toList().map { it.second }
                     if (list.size > 0) {
-                        methodChannel2.invokeMethod("getFacesNodes", list[0].toString())
+                        methodChannel2.invokeMethod("getFacesNodes", list[0].position)
                     } else {
                         methodChannel2.invokeMethod("getFacesNodes", "none")
                     }
