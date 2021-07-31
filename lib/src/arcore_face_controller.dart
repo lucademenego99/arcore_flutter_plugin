@@ -17,6 +17,11 @@ class ArCoreFaceController {
   final bool debug;
   MethodChannel _channel;
   StringResultHandler onError;
+  String _facesNodes;
+
+  String get facesNodes {
+    return _facesNodes;
+  }
 
   init() async {
     try {
@@ -38,6 +43,10 @@ class ArCoreFaceController {
           onError(call.arguments);
         }
         break;
+      case 'getFacesNodes':
+        _facesNodes = call.arguments;
+        print(call.arguments);
+        break;
       default:
         if (debug) {
           print('Unknown method ${call.method}');
@@ -55,7 +64,7 @@ class ArCoreFaceController {
     });
   }
   
-  Future<ArCoreNode> getFacesNodes() {
+  Future<String> getFacesNodes() {
     return _channel.invokeMethod('getFacesNodes');
   }
 
