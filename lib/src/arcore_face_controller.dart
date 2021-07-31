@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:vector_math/vector_math_64.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -18,9 +17,9 @@ class ArCoreFaceController {
   final bool debug;
   MethodChannel _channel;
   StringResultHandler onError;
-  Vector3 _facesNodes;
+  String _facesNodes;
 
-  Vector3 get facesNodes {
+  String get facesNodes {
     return _facesNodes;
   }
 
@@ -46,7 +45,6 @@ class ArCoreFaceController {
         break;
       case 'getFacesNodes':
         _facesNodes = call.arguments;
-        print(call.arguments);
         break;
       default:
         if (debug) {
