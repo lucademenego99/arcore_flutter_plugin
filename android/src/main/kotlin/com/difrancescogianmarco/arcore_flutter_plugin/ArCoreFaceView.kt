@@ -24,7 +24,7 @@ import kotlin.collections.HashMap
 
 class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
 
-    private val methodChannel: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
+    private val methodChannel2: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
     private val TAG: String = ArCoreFaceView::class.java.name
     private var faceRegionsRenderable: ModelRenderable? = null
     private var faceMeshTexture: Texture? = null
@@ -88,7 +88,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
                 "getFacesNodes" -> {
                     val list = faceNodeMap.toList().map { it.second }
-                    methodChannel.invokeMethod("getFacesNodes", list[0].toString())
+                    methodChannel2.invokeMethod("getFacesNodes", list[0].toString())
                 }
                 "dispose" -> {
                     debugLog( " updateMaterials")
