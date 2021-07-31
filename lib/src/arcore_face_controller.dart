@@ -17,7 +17,7 @@ class ArCoreFaceController {
   final bool debug;
   MethodChannel _channel;
   StringResultHandler onError;
-  String _facesNodes;
+  Vector3 _facesNodes;
 
   String get facesNodes {
     return _facesNodes;
@@ -64,7 +64,7 @@ class ArCoreFaceController {
     });
   }
   
-  Future<String> getFacesNodes() {
+  Future<void> getFacesNodes() {
     return _channel.invokeMethod('getFacesNodes');
   }
 
