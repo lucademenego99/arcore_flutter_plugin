@@ -42,7 +42,7 @@ class ArCoreFaceController {
           onError(call.arguments);
         }
         break;
-      case 'getFacesNodes':
+      case 'onGetFacesNodes':
         onGetFacesNodes(call.arguments);
         break;
       default:
