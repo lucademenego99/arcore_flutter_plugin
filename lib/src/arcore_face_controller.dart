@@ -20,7 +20,7 @@ class ArCoreFaceController {
   MethodChannel _channel;
   StringResultHandler onError;
 
-  FacesEventHandler? onGetFacesNodes;
+  FacesEventHandler onGetFacesNodes;
 
   init() async {
     try {
@@ -43,9 +43,7 @@ class ArCoreFaceController {
         }
         break;
       case 'getFacesNodes':
-        if (onGetFacesNodes != null) {
-          onGetFacesNodes!(call.arguments);
-        }
+        onGetFacesNodes(call.arguments);
         break;
       default:
         if (debug) {
