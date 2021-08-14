@@ -43,7 +43,8 @@ class ArCoreFaceController {
         }
         break;
       case 'onGetFacesNodes':
-        onGetFacesNodes(call.arguments);
+        var matrixString = call.arguments.toString();
+        onGetFacesNodes(matrixString);
         break;
       default:
         if (debug) {
