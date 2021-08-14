@@ -35,9 +35,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
                 //                if (faceRegionsRenderable == null || faceMeshTexture == null) {
-                if (faceMeshTexture == null) {
-                    return@OnUpdateListener
-                }
+                // if (faceMeshTexture == null) {
+                //     return@OnUpdateListener
+                // }
                 val faceList = arSceneView?.session?.getAllTrackables(AugmentedFace::class.java)
 
                 faceList?.let {
