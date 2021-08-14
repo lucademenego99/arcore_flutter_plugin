@@ -68,6 +68,11 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                             iter.remove()
                         }
                     }
+
+                    val list = faceNodeMap.toList().map { it.first }
+                    if (list.size > 0) {
+                        methodChannel2.invokeMethod("onGetFacesNodes", list[0].getCenterPose().toString())
+                    }
                 }
             }
         }
@@ -85,14 +90,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val textureBytes = map["textureBytes"] as ByteArray
                     val skin3DModelFilename = map["skin3DModelFilename"] as? String
                     loadMesh(textureBytes, skin3DModelFilename)
-                }
-                "getFacesNodes" -> {
-                    val list = faceNodeMap.toList().map { it.first }
-                    if (list.size > 0) {
-                        methodChannel2.invokeMethod("getFacesNodes", list[0].getCenterPose().toString())
-                    } else {
-                        methodChannel2.invokeMethod("getFacesNodes", "none")
-                    }
                 }
                 "dispose" -> {
                     debugLog( " updateMaterials")

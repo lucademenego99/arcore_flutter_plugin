@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 
 import '../arcore_flutter_plugin.dart';
 
+typedef FacesEventHandler = void Function(String transform);
+
 class ArCoreFaceController {
   ArCoreFaceController(
       {int id, this.enableAugmentedFaces, this.debug = false}) {
@@ -17,11 +19,8 @@ class ArCoreFaceController {
   final bool debug;
   MethodChannel _channel;
   StringResultHandler onError;
-  String _facesNodes;
 
-  String get facesNodes {
-    return _facesNodes;
-  }
+  FacesEventHandler? onGetFacesNodes;
 
   init() async {
     try {
@@ -44,7 +43,9 @@ class ArCoreFaceController {
         }
         break;
       case 'getFacesNodes':
-        _facesNodes = call.arguments;
+        if (onGetFacesNodes != null) {
+          onGetFacesNodes!(call.arguments);
+        }
         break;
       default:
         if (debug) {
@@ -62,7 +63,7 @@ class ArCoreFaceController {
       'skin3DModelFilename': skin3DModelFilename
     });
   }
-  
+
   Future<void> getFacesNodes() {
     return _channel.invokeMethod('getFacesNodes');
   }
