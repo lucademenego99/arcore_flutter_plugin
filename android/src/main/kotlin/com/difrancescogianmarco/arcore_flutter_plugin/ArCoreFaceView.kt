@@ -98,7 +98,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     loadMesh(textureBytes, skin3DModelFilename)
                 }
                 "getFOV" -> {
-                    result.success(arSceneView?.camera.getVerticalFovDegrees())
+                    result.success(arSceneView?.arFrame.camera.getVerticalFovDegrees())
                 }
                 "dispose" -> {
                     debugLog( " updateMaterials")
