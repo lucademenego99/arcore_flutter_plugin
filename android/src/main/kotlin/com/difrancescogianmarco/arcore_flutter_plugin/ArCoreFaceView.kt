@@ -100,7 +100,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
                 "getFOV" -> {
                     val dest = FloatArray(16)
-                    arSceneView?.arFrame?.camera?.getProjectionMatrix(dest, 0, 0.0001, 2)
+                    arSceneView?.arFrame?.camera?.getProjectionMatrix(dest, 0, 0.0001f, 2.0f)
                     print(dest[5].toString())
                     val res = 2 * atan(1/dest[5]) * 180/PI;
                     result.success(res)
