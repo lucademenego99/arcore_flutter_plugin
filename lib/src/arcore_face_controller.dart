@@ -63,8 +63,10 @@ class ArCoreFaceController {
     });
   }
 
-  Future<double> getFOV() {
-    return _channel.invokeMethod('getFOV');
+  Future<List<dynamic>> getFOV() {
+    var a = _channel.invokeMethod('getFOV');
+    print(a);
+    return a;
   }
 
   void dispose() {
