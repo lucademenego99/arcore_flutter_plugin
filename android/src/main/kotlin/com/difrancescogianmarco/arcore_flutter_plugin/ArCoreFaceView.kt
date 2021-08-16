@@ -21,6 +21,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import kotlin.collections.HashMap
+import kotlin.math.*
 
 class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
 
@@ -100,12 +101,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 "getFOV" -> {
                     val dest = FloatArray(16)
                     arSceneView?.arFrame?.camera?.getProjectionMatrix(dest, 0, 0.0001, 2)
-                    debugLog(dest)
-                    val doubleArray = DoubleArray(dest.size)
-                    for ((i, a) in dest.withIndex()) {
-                        doubleArray[i] = a.toDouble()
-                    }
-                    result.success(doubleArray)
+                    print(dest[5].toString())
+                    val res = 2 * atan(1/dest[5]) * 180/PI;
+                    result.success(res)
                 }
                 "dispose" -> {
                     debugLog( " updateMaterials")
