@@ -63,8 +63,8 @@ class ArCoreFaceController {
     });
   }
 
-  Future<void> getFacesNodes() {
-    return _channel.invokeMethod('getFacesNodes');
+  Future<double> getFOV() {
+    return _channel.invokeMethod('getFOV');
   }
 
   void dispose() {
