@@ -100,7 +100,11 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 "getFOV" -> {
                     val projectionMatrix = FloatArray(16)
                     arSceneView?.arFrame?.camera?.getProjectionMatrix(projectionMatrix, 0, 0.0001, 2)
-                    result.success(projectionMatrix)
+                    val doubleArray = DoubleArray(projectionMatrix.size)
+                    for ((i, a) in projectionMatrix.withIndex()) {
+                        doubleArray[i] = a.toDouble()
+                    }
+                    result.success(doubleArray)
                 }
                 "dispose" -> {
                     debugLog( " updateMaterials")
