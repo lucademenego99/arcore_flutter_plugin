@@ -138,8 +138,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         val imageDimensions = arSceneView?.arFrame?.camera?.getImageIntrinsics()?.getImageDimensions()
 
                         val test = IntArray(2)
-                        test[0] = imageDimensions[0];
-                        test[1] = imageDimensions[1];
+                        test[0] = imageDimensions!![0];
+                        test[1] = imageDimensions!![1];
 
                         result.success(test);
 
