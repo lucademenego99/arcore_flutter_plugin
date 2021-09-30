@@ -146,9 +146,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
                             val anchorMatrix = FloatArray(16)
                             setIdentityM(anchorMatrix, 0);
-                            anchorMatrix[3] = point.get(0);
-                            anchorMatrix[7] = point.get(1);
-                            anchorMatrix[11] = point.get(2);
+                            anchorMatrix[12] = point.get(0);
+                            anchorMatrix[13] = point.get(1);
+                            anchorMatrix[14] = point.get(2);
 
                             val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
 
