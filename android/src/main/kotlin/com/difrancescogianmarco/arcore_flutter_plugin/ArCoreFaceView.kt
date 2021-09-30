@@ -29,6 +29,7 @@ import android.os.Environment
 import android.os.Handler
 import android.view.PixelCopy
 import android.os.HandlerThread
+import android.content.Context
 import android.content.ContextWrapper
 import java.io.FileOutputStream
 import java.io.File
@@ -292,7 +293,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         // android/data/com.hswo.mvc_2021.hswo_mvc_2021_flutter_ar/files/
         // activity.applicationContext.getFilesDir().toString() //doesnt work!!
         // Environment.getExternalStorageDirectory()
-        val mPath: String =  Environment.getDataDirectory().toString() + "/DCIM/" + now + ".jpg"
+        // val mPath: String =  Environment.getExternalStorageDirectory().toString() + "/DCIM/" + now + ".jpg"
+        val mPath: String =  getExternalFilesDir(null).toString() + "/DCIM/" + now + ".jpg"
         val mediaFile = File(mPath)
         debugLog(mediaFile.toString())
         //Log.i("path","fileoutputstream opened")
