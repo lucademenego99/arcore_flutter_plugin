@@ -112,10 +112,12 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         val size = vertices.remaining() * 2;
                         val doubleArray = DoubleArray(size)
 
-                        for (i in 1..size) {
-                            doubleArray[i-1] = 1.0;
-                            doubleArray[i] = vertices.get().toDouble();
-                            i = i+1;
+                        for (i in 0..size-1) {
+                            if (i % 2 == 0) {
+                                doubleArray[i] = 1.0;
+                            } else {
+                                doubleArray[i] = vertices.get().toDouble();
+                            }
                         }
                         
                         result.success(doubleArray);
