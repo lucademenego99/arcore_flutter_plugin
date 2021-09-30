@@ -109,27 +109,22 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val list = faceNodeMap.toList().map { it.first }
                     if (list.size > 0) {
                         val vertices = list[0].getMeshVertices()
-                        val size = vertices.remaining() * 2;
+                        val size = vertices.remaining();
                         val doubleArray = DoubleArray(size)
-
                         for (i in 0..size-1) {
-                            if (i % 2 == 0) {
-                                doubleArray[i] = 1.0;
-                            } else {
-                                doubleArray[i] = vertices.get().toDouble();
-                            }
+                            doubleArray[i] = vertices.get().toDouble();
                         }
-                        
                         result.success(doubleArray);
                     }
                 }
                 "getMeshTriangleIndices" -> {
                     val list = faceNodeMap.toList().map { it.first }
                     if (list.size > 0) {
-                        val vertices = list[0].getMeshTriangleIndices().array();
-                        val intArray = IntArray(vertices.size)
-                        for ((i, a) in vertices.withIndex()) {
-                            intArray[i] = a.toInt()
+                        val vertices = list[0].getMeshTriangleIndices();
+                        val size = vertices.remaining();
+                        val intArray = IntArray(size)
+                        for (i in 0..size-1) {
+                            intArray[i] = vertices.get().toInt();
                         }
                         result.success(intArray)
                     }
