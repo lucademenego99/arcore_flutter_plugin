@@ -114,6 +114,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                             // doubleArray[i] = vertices.get(i-1).toDouble();
                         // }
 
+                        val dest = FloatArray(16)
                         list[0].getCenterPose().toMatrix(dest, 0);
                         val doubleArray = DoubleArray(dest.size)
                         for ((i, a) in dest.withIndex()) {
