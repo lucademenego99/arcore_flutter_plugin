@@ -29,7 +29,6 @@ import android.os.Environment
 import android.os.Handler
 import android.view.PixelCopy
 import android.os.HandlerThread
-import android.content.Context
 import android.content.ContextWrapper
 import java.io.FileOutputStream
 import java.io.File
