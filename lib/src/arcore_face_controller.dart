@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../arcore_flutter_plugin.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 typedef FacesEventHandler = void Function(String transform);
 
@@ -54,6 +57,12 @@ class ArCoreFaceController {
     return Future.value();
   }
 
+  List<double> vector3ToJson(Vector3 point) {
+    final list = List.filled(3, 0.0);
+    point.copyIntoArray(list);
+    return list;
+  }
+
   Future<void> loadMesh(
       {@required Uint8List textureBytes, String skin3DModelFilename}) {
     assert(textureBytes != null);
@@ -64,9 +73,23 @@ class ArCoreFaceController {
   }
 
   Future<dynamic> getFOV() {
-    var a = _channel.invokeMethod('getFOV');
-    print(a);
-    return a;
+    return _channel.invokeMethod('getFOV');
+  }
+
+  Future<dynamic> getMeshVertices() async {
+    return await (_channel.invokeListMethod<double>('getMeshVertices')
+        as FutureOr<List<dynamic>>);
+  }
+
+  Future<dynamic> getMeshTriangleIndices() async {
+    return await (_channel.invokeListMethod<int>('getMeshTriangleIndices'))
+        as FutureOr<List<dynamic>>;
+  }
+
+  Future<dynamic> projectPoint(Vector3 point) async {
+    final projectPoint = await _channel.invokeListMethod<double>(
+        'projectPoint', {'point': vector3ToJson(point)});
+    return projectPoint;
   }
 
   void dispose() {

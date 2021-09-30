@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import android.opengl.Matrix.*
 import com.difrancescogianmarco.arcore_flutter_plugin.utils.ArCoreUtils
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Config
@@ -101,9 +102,64 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 "getFOV" -> {
                     val dest = FloatArray(16)
                     arSceneView?.arFrame?.camera?.getProjectionMatrix(dest, 0, 0.0001f, 2.0f)
-                    print(dest[5].toString())
                     val res = 2 * atan(1/dest[5]) * 180/PI;
                     result.success(res)
+                }
+                "getMeshVertices" -> {
+                    val list = faceNodeMap.toList().map { it.first }
+                    if (list.size > 0) {
+                        val vertices = list[0].getMeshVertices().array();
+                        val doubleArray = DoubleArray(vertices.size)
+                        for ((i, a) in vertices.withIndex()) {
+                            doubleArray[i] = a.toDouble()
+                        }
+                        result.success(doubleArray)
+                    }
+                }
+                "getMeshTriangleIndices" -> {
+                    val list = faceNodeMap.toList().map { it.first }
+                    if (list.size > 0) {
+                        val vertices = list[0].getMeshTriangleIndices().array();
+                        val intArray = IntArray(vertices.size)
+                        for ((i, a) in vertices.withIndex()) {
+                            intArray[i] = a.toInt()
+                        }
+                        result.success(intArray)
+                    }
+                }
+                "projectPoint" -> {
+                    val map = call.arguments as HashMap<*, *>
+                    val point = map["point"] as? ArrayList<Float>
+
+                    if (point != null) {
+                        val pointArray = point.toFloatArray()
+
+                        val imageDimensions = arSceneView?.arFrame?.camera?.getImageIntrinsics().getImageDimensions()
+
+                        val projmtx = FloatArray(16)
+                        arSceneView?.arFrame?.camera?.getProjectionMatrix(projmtx, 0, 0.0001f, 2.0f)
+
+                        val viewmtx = FloatArray(16)
+                        arSceneView?.arFrame?.camera?.getViewMatrix(viewmtx, 0)
+
+                        val anchorMatrix = FloatArray(16)
+                        setIdentityM(anchorMatrix, 0);
+                        anchorMatrix[3] = pointArray[0];
+                        anchorMatrix[7] = pointArray[1];
+                        anchorMatrix[11] = pointArray[2];
+
+                        val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
+                        val anchor_2d = worldToScreen(imageDimensions[0], imageDimensions[1], worldToScreenMatrix);
+
+                        val doubleArray = DoubleArray(anchor_2d.size)
+                        for ((i, a) in anchor_2d.withIndex()) {
+                            doubleArray[i] = a.toDouble()
+                        }
+
+                        result.success(doubleArray);
+                    } else {
+                        result.error("noPointProvided");
+                    }
                 }
                 "dispose" -> {
                     debugLog( " updateMaterials")
@@ -117,6 +173,45 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             debugLog("Impossible call " + call.method + " method on unsupported device")
             result.error("Unsupported Device","",null)
         }
+    }
+
+    fun calculateWorldToCameraMatrix(modelmtx: FloatArray, viewmtx: FloatArray, prjmtx: FloatArray): FloatArray {
+        val scaleFactor = 1.0f;
+        val scaleMatrix = FloatArray(16)
+        val modelXscale = FloatArray(16)
+        val viewXmodelXscale = FloatArray(16)
+        val worldToScreenMatrix = FloatArray(16)
+
+        setIdentityM(scaleMatrix, 0);
+        scaleMatrix[0] = scaleFactor;
+        scaleMatrix[5] = scaleFactor;
+        scaleMatrix[10] = scaleFactor;
+
+        multiplyMM(modelXscale, 0, modelmtx, 0, scaleMatrix, 0);
+        multiplyMM(viewXmodelXscale, 0, viewmtx, 0, modelXscale, 0);
+        multiplyMM(worldToScreenMatrix, 0, prjmtx, 0, viewXmodelXscale, 0);
+
+        return worldToScreenMatrix;
+    }
+
+    fun worldToScreen(screenWidth: Int, screenHeight: Int, worldToCameraMatrix: FloatArray): FloatArray {
+        val origin = FloatArray(4)
+        origin[0] = 0f;
+        origin[1] = 0f;
+        origin[2] = 0f;
+        origin[3] = 1f;
+
+        val ndcCoord = FloatArray(4)
+        multiplyMV(ndcCoord, 0,  worldToCameraMatrix, 0,  origin, 0);
+
+        ndcCoord[0] = ndcCoord[0]/ndcCoord[3];
+        ndcCoord[1] = ndcCoord[1]/ndcCoord[3];
+
+        val pos_2d = FloatArray(2)
+        pos_2d[0] = screenWidth  * ((ndcCoord[0] + 1.0)/2.0);
+        pos_2d[1] = screenHeight * (( 1.0 - ndcCoord[1])/2.0);
+
+        return pos_2d;
     }
 
     fun loadMesh(textureBytes: ByteArray?, skin3DModelFilename: String?) {
