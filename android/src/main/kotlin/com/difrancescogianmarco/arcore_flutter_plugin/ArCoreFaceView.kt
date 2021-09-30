@@ -216,11 +216,11 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
         return ndcCoord;
 
-        val pos_2d = DoubleArray(2)
-        pos_2d[0] = (screenWidth  * ((ndcCoord[0] + 1.0)/2.0));
-        pos_2d[1] = (screenHeight * (( 1.0 - ndcCoord[1])/2.0));
+        //val pos_2d = DoubleArray(2)
+        //pos_2d[0] = (screenWidth  * ((ndcCoord[0] + 1.0)/2.0));
+        //pos_2d[1] = (screenHeight * (( 1.0 - ndcCoord[1])/2.0));
 
-        return pos_2d;
+        //return pos_2d;
     }
 
     fun loadMesh(textureBytes: ByteArray?, skin3DModelFilename: String?) {
