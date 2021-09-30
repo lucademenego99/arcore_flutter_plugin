@@ -212,8 +212,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         ndcCoord[1] = (ndcCoord[1]/ndcCoord[3]).toFloat();
 
         val pos_2d = FloatArray(2)
-        pos_2d[0] = screenWidth  * ((ndcCoord[0] + 1.0)/2.0);
-        pos_2d[1] = screenHeight * (( 1.0 - ndcCoord[1])/2.0);
+        pos_2d[0] = (screenWidth  * ((ndcCoord[0] + 1.0)/2.0)).toFloat();
+        pos_2d[1] = (screenHeight * (( 1.0 - ndcCoord[1])/2.0)).toFloat();
 
         return pos_2d;
     }
