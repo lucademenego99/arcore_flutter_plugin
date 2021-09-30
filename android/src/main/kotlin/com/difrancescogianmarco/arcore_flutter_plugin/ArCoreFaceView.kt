@@ -205,11 +205,11 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         origin[2] = 0f;
         origin[3] = 1f;
 
-        val ndcCoord = DoubleArray(4)
+        val ndcCoord = FloatArray(4)
         multiplyMV(ndcCoord, 0,  worldToCameraMatrix, 0,  origin, 0);
 
-        ndcCoord[0] = ndcCoord[0]/ndcCoord[3];
-        ndcCoord[1] = ndcCoord[1]/ndcCoord[3];
+        ndcCoord[0] = (ndcCoord[0]/ndcCoord[3]).toFloat();
+        ndcCoord[1] = (ndcCoord[1]/ndcCoord[3]).toFloat();
 
         val pos_2d = FloatArray(2)
         pos_2d[0] = screenWidth  * ((ndcCoord[0] + 1.0)/2.0);
