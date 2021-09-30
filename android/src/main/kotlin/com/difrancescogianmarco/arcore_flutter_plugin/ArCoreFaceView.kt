@@ -134,31 +134,35 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     if (point != null) {
                         val pointArray = point.toFloatArray()
 
-                        val imageDimensions = arSceneView?.arFrame?.camera?.getImageIntrinsics().getImageDimensions()
+                        val imageDimensions = arSceneView?.arFrame?.camera?.getImageIntrinsics()?.getImageDimensions()
 
-                        val projmtx = FloatArray(16)
-                        arSceneView?.arFrame?.camera?.getProjectionMatrix(projmtx, 0, 0.0001f, 2.0f)
+                        if (imageDimensions != null) {
+                            val projmtx = FloatArray(16)
+                            arSceneView?.arFrame?.camera?.getProjectionMatrix(projmtx, 0, 0.0001f, 2.0f)
 
-                        val viewmtx = FloatArray(16)
-                        arSceneView?.arFrame?.camera?.getViewMatrix(viewmtx, 0)
+                            val viewmtx = FloatArray(16)
+                            arSceneView?.arFrame?.camera?.getViewMatrix(viewmtx, 0)
 
-                        val anchorMatrix = FloatArray(16)
-                        setIdentityM(anchorMatrix, 0);
-                        anchorMatrix[3] = pointArray[0];
-                        anchorMatrix[7] = pointArray[1];
-                        anchorMatrix[11] = pointArray[2];
+                            val anchorMatrix = FloatArray(16)
+                            setIdentityM(anchorMatrix, 0);
+                            anchorMatrix[3] = pointArray[0];
+                            anchorMatrix[7] = pointArray[1];
+                            anchorMatrix[11] = pointArray[2];
 
-                        val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
-                        val anchor_2d = worldToScreen(imageDimensions[0], imageDimensions[1], worldToScreenMatrix);
+                            val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
+                            val anchor_2d = worldToScreen(imageDimensions[0], imageDimensions[1], worldToScreenMatrix);
 
-                        val doubleArray = DoubleArray(anchor_2d.size)
-                        for ((i, a) in anchor_2d.withIndex()) {
-                            doubleArray[i] = a.toDouble()
+                            val doubleArray = DoubleArray(anchor_2d.size)
+                            for ((i, a) in anchor_2d.withIndex()) {
+                                doubleArray[i] = a.toDouble()
+                            }
+
+                            result.success(doubleArray);
+                        } else {
+                            result.error("noImageDimensionsFound", "No camera found on arFrame", null);
                         }
-
-                        result.success(doubleArray);
                     } else {
-                        result.error("noPointProvided");
+                        result.error("noPointProvided", "The user didn't provide any point to project", null);
                     }
                 }
                 "dispose" -> {
@@ -201,7 +205,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         origin[2] = 0f;
         origin[3] = 1f;
 
-        val ndcCoord = FloatArray(4)
+        val ndcCoord = DoubleArray(4)
         multiplyMV(ndcCoord, 0,  worldToCameraMatrix, 0,  origin, 0);
 
         ndcCoord[0] = ndcCoord[0]/ndcCoord[3];
