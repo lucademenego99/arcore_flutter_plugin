@@ -134,13 +134,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val point = map["point"] as? ArrayList<Float>
 
                     if (point != null) {
-                        val pointArray = point.toFloatArray()
-
-                        val resultTest = DoubleArray(2);
-                        resultTest[0] = point.get(0).toDouble();
-                        resultTest[1] = point.get(1).toDouble();
-                        result.success(resultTest);
-
                         val imageDimensions = arSceneView?.arFrame?.camera?.getImageIntrinsics()?.getImageDimensions()
 
                         if (imageDimensions != null) {
@@ -152,9 +145,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
                             val anchorMatrix = FloatArray(16)
                             setIdentityM(anchorMatrix, 0);
-                            anchorMatrix[3] = pointArray[0];
-                            anchorMatrix[7] = pointArray[1];
-                            anchorMatrix[11] = pointArray[2];
+                            anchorMatrix[3] = ppint.get(0);
+                            anchorMatrix[7] = point.get(1);
+                            anchorMatrix[11] = point.get(2);
 
                             val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
                             val anchor_2d = worldToScreen(imageDimensions[0], imageDimensions[1], worldToScreenMatrix);
