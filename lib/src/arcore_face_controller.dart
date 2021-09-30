@@ -89,8 +89,9 @@ class ArCoreFaceController {
   }
 
   Future<dynamic> projectPoint(Vector3 point) async {
-    final projectPoint = await _channel
-        .invokeMethod('projectPoint', {'point': vector3ToJson(point)});
+    final projectPoint = await _channel.invokeMethod('projectPoint', {
+      'point': [point.x, point.y, point.z]
+    });
     return projectPoint;
   }
 
