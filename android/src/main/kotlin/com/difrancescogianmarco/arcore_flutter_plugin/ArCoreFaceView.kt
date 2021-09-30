@@ -110,12 +110,12 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     if (list.size > 0) {
                         val vertices = list[0].getMeshVertices()
                         debugLog("VERTICES: ${vertices}");
-                        val verticesArray = vertices.array();
-                        val doubleArray = DoubleArray(verticesArray.size)
-                        for ((i, a) in verticesArray.withIndex()) {
-                            doubleArray[i] = a.toDouble()
-                        }
-                        result.success(doubleArray)
+                        // val verticesArray = vertices.array();
+                        // val doubleArray = DoubleArray(verticesArray.size)
+                        // for ((i, a) in verticesArray.withIndex()) {
+                            // doubleArray[i] = a.toDouble()
+                        //}
+                        result.success(vertices.toString())
                     }
                 }
                 "getMeshTriangleIndices" -> {
