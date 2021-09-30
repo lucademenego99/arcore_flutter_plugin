@@ -109,11 +109,13 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val list = faceNodeMap.toList().map { it.first }
                     if (list.size > 0) {
                         val vertices = list[0].getMeshVertices()
-                        val doubleArray = DoubleArray(vertices.remaining()+1)
-                        val size = vertices.remaining()
-                        doubleArray[0] = 2.0;
+                        val size = vertices.remaining() * 2;
+                        val doubleArray = DoubleArray(size)
+
                         for (i in 1..size) {
+                            doubleArray[i-1] = 1.0;
                             doubleArray[i] = vertices.get().toDouble();
+                            i = i+1;
                         }
                         
                         result.success(doubleArray);
