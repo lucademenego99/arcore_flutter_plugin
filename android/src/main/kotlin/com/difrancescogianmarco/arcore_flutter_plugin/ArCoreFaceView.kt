@@ -164,7 +164,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
                             val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
 
-                            val anchor_2d = worldToScreen(imageDimensions!![0], imageDimensions!![1], worldToScreenMatrix);
+                            //val anchor_2d = worldToScreen(imageDimensions!![0], imageDimensions!![1], worldToScreenMatrix);
+                            val anchor_2d = worldToScreen(1080, 2112, worldToScreenMatrix);
 
                             result.success(anchor_2d);
                         } else {
