@@ -115,7 +115,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                             // doubleArray[i] = a.toDouble()
                         //}
                         for (i in 1..vertices.remaining()) {
-                            doubleArray[i] = vertices.get(i-1);
+                            doubleArray[i] = vertices.get(i-1).toDouble();
                         }
                         result.success(doubleArray);
                     }
