@@ -141,14 +141,14 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                             val projmtx = FloatArray(16)
                             arSceneView?.arFrame?.camera?.getProjectionMatrix(projmtx, 0, 0.0001f, 2.0f)
 
+                            val viewmtx = FloatArray(16)
+                            arSceneView?.arFrame?.camera?.getViewMatrix(viewmtx, 0)
+
                             val doubleArrayTest = DoubleArray(16)
-                            for ((i, a) in projmtx.withIndex()) {
+                            for ((i, a) in viewmtx.withIndex()) {
                                 doubleArrayTest[i] = a.toDouble()
                             }
                             result.success(doubleArrayTest);
-
-                            val viewmtx = FloatArray(16)
-                            arSceneView?.arFrame?.camera?.getViewMatrix(viewmtx, 0)
 
                             val anchorMatrix = FloatArray(16)
                             setIdentityM(anchorMatrix, 0);
