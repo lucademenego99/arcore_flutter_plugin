@@ -195,7 +195,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         return worldToScreenMatrix;
     }
 
-    fun worldToScreen(screenWidth: Int, screenHeight: Int, worldToCameraMatrix: FloatArray): FloatArray {
+    fun worldToScreen(screenWidth: Int, screenHeight: Int, worldToCameraMatrix: FloatArray): DoubleArray {
         val origin = FloatArray(4)
         origin[0] = 0f;
         origin[1] = 0f;
