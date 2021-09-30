@@ -26,6 +26,7 @@ import kotlin.math.*
 
 import android.graphics.Bitmap
 import android.os.Environment
+import android.os.Handler
 import android.view.PixelCopy
 import android.os.HandlerThread
 import android.content.ContextWrapper
