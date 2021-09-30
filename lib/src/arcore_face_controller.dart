@@ -57,12 +57,6 @@ class ArCoreFaceController {
     return Future.value();
   }
 
-  List<double> vector3ToJson(Vector3 point) {
-    final list = List.filled(3, 0.0);
-    point.copyIntoArray(list);
-    return list;
-  }
-
   Future<void> loadMesh(
       {@required Uint8List textureBytes, String skin3DModelFilename}) {
     assert(textureBytes != null);
@@ -76,16 +70,23 @@ class ArCoreFaceController {
     return _channel.invokeMethod('getFOV');
   }
 
-  Future<dynamic> getMeshVertices() async {
-    final b = await (_channel.invokeMethod('getMeshVertices'));
-    print(b);
-    return b;
+  Future<List<Vector3>> getMeshVertices() async {
+    final rawVertices =
+        await (_channel.invokeMethod('getMeshVertices')) as List;
+
+    List<Vector3> result = [];
+    for (var i = 0; i < rawVertices.length - 1; i += 3) {
+      result.add(Vector3(rawVertices[i] as double, rawVertices[i + 1] as double,
+          rawVertices[i + 2] as double));
+    }
+    return result;
   }
 
-  Future<dynamic> getMeshTriangleIndices() async {
-    final a = await (_channel.invokeMethod('getMeshTriangleIndices'));
-    print(a);
-    return a;
+  Future<List<int>> getMeshTriangleIndices() async {
+    final rawIndices =
+        await (_channel.invokeMethod('getMeshTriangleIndices')) as List;
+    List<int> result = rawIndices.map((e) => e as int).toList();
+    return result;
   }
 
   Future<dynamic> projectPoint(Vector3 point) async {
