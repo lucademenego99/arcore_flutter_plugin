@@ -211,7 +211,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         val ndcCoord = FloatArray(4)
         multiplyMV(ndcCoord, 0,  worldToCameraMatrix, 0,  origin, 0);
 
-        if (ndcCoord[3] != 0.0) {
+        if (ndcCoord[3] != 0.0f) {
             ndcCoord[0] = (ndcCoord[0]/ndcCoord[3]).toFloat();
             ndcCoord[1] = (ndcCoord[1]/ndcCoord[3]).toFloat();
         }
