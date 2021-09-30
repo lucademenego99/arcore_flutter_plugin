@@ -24,6 +24,17 @@ import io.flutter.plugin.common.MethodChannel
 import kotlin.collections.HashMap
 import kotlin.math.*
 
+import android.graphics.Bitmap
+import android.os.Environment
+import android.view.PixelCopy
+import android.os.HandlerThread
+import android.content.ContextWrapper
+import java.io.FileOutputStream
+import java.io.File
+import java.io.IOException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
 
     private val methodChannel2: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
@@ -162,6 +173,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         result.error("noPointProvided", "The user didn't provide any point to project", null);
                     }
                 }
+                "takeScreenshot" -> {
+                    takeScreenshot(call, result);
+                }
                 "dispose" -> {
                     debugLog( " updateMaterials")
                     dispose()
@@ -237,6 +251,56 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 .setSource(BitmapFactory.decodeByteArray(textureBytes, 0, textureBytes!!.size))
                 .build()
                 .thenAccept { texture -> faceMeshTexture = texture }
+    }
+
+    private fun takeScreenshot(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            // create bitmap screen capture
+
+            // Create a bitmap the size of the scene view.
+            val bitmap: Bitmap = Bitmap.createBitmap(arSceneView!!.getWidth(), arSceneView!!.getHeight(),
+                    Bitmap.Config.ARGB_8888)
+
+            // Create a handler thread to offload the processing of the image.
+            val handlerThread = HandlerThread("PixelCopier")
+            handlerThread.start()
+
+            // Make the request to copy.
+            PixelCopy.request(arSceneView!!, bitmap, { copyResult ->
+                if (copyResult === PixelCopy.SUCCESS) {
+                    try {
+                        saveBitmapToDisk(bitmap)
+                    } catch (e: IOException) {
+                        e.printStackTrace();
+                    }
+                }
+                handlerThread.quitSafely()
+            }, Handler(handlerThread.getLooper()))
+
+        } catch (e: Throwable) {
+            // Several error may come out with file handling or DOM
+            e.printStackTrace()
+        }
+        result.success(null)
+    }
+
+    @Throws(IOException::class)
+    fun saveBitmapToDisk(bitmap: Bitmap):String {
+        val now = "rawScreenshot"
+        // android/data/com.hswo.mvc_2021.hswo_mvc_2021_flutter_ar/files/
+        // activity.applicationContext.getFilesDir().toString() //doesnt work!!
+        // Environment.getExternalStorageDirectory()
+        val mPath: String =  Environment.getExternalStorageDirectory().toString() + "/DCIM/" + now + ".jpg"
+        val mediaFile = File(mPath)
+        debugLog(mediaFile.toString())
+        //Log.i("path","fileoutputstream opened")
+        //Log.i("path",mPath)
+        val fileOutputStream = FileOutputStream(mediaFile)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+        fileOutputStream.flush()
+        fileOutputStream.close()
+
+        return mPath as String
     }
 
     private fun arScenViewInit(call: MethodCall, result: MethodChannel.Result) {

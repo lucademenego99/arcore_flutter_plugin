@@ -96,6 +96,10 @@ class ArCoreFaceController {
     return projectPoint;
   }
 
+  Future<void> takeScreenshot() async {
+    return _channel.invokeMethod('takeScreenshot');
+  }
+
   void dispose() {
     _channel?.invokeMethod<void>('dispose');
   }
