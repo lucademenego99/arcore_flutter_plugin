@@ -152,13 +152,13 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
                             val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
 
-                            val doubleArrayTest = DoubleArray(16)
-                            for ((i, a) in worldToScreenMatrix.withIndex()) {
+                            val anchor_2d = worldToScreen(imageDimensions!![0], imageDimensions!![1], worldToScreenMatrix);
+
+                            val doubleArrayTest = DoubleArray(4)
+                            for ((i, a) in anchor_2d.withIndex()) {
                                 doubleArrayTest[i] = a.toDouble()
                             }
                             result.success(doubleArrayTest);
-
-                            val anchor_2d = worldToScreen(imageDimensions!![0], imageDimensions!![1], worldToScreenMatrix);
 
                             // result.success(anchor_2d);
                         } else {
@@ -201,7 +201,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         return worldToScreenMatrix;
     }
 
-    fun worldToScreen(screenWidth: Int, screenHeight: Int, worldToCameraMatrix: FloatArray): DoubleArray {
+    fun worldToScreen(screenWidth: Int, screenHeight: Int, worldToCameraMatrix: FloatArray): FloatArray {
         val origin = FloatArray(4)
         origin[0] = 0f;
         origin[1] = 0f;
@@ -213,6 +213,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
         ndcCoord[0] = (ndcCoord[0]/ndcCoord[3]).toFloat();
         ndcCoord[1] = (ndcCoord[1]/ndcCoord[3]).toFloat();
+
+        return ndcCoord;
 
         val pos_2d = DoubleArray(2)
         pos_2d[0] = (screenWidth  * ((ndcCoord[0] + 1.0)/2.0));
