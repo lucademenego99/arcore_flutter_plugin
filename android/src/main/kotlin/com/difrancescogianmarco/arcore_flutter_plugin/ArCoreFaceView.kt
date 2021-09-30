@@ -154,13 +154,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
                             val anchor_2d = worldToScreen(imageDimensions!![0], imageDimensions!![1], worldToScreenMatrix);
 
-                            val doubleArrayTest = DoubleArray(4)
-                            for ((i, a) in anchor_2d.withIndex()) {
-                                doubleArrayTest[i] = a.toDouble()
-                            }
-                            result.success(doubleArrayTest);
-
-                            // result.success(anchor_2d);
+                            result.success(anchor_2d);
                         } else {
                             result.error("noImageDimensionsFound", "No camera found on arFrame", null);
                         }
@@ -216,13 +210,11 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             ndcCoord[1] = (ndcCoord[1]/ndcCoord[3]).toFloat();
         }
 
-        return ndcCoord;
+        val pos_2d = DoubleArray(2)
+        pos_2d[0] = (screenWidth  * ((ndcCoord[0] + 1.0)/2.0));
+        pos_2d[1] = (screenHeight * (( 1.0 - ndcCoord[1])/2.0));
 
-        //val pos_2d = DoubleArray(2)
-        //pos_2d[0] = (screenWidth  * ((ndcCoord[0] + 1.0)/2.0));
-        //pos_2d[1] = (screenHeight * (( 1.0 - ndcCoord[1])/2.0));
-
-        //return pos_2d;
+        return pos_2d;
     }
 
     fun loadMesh(textureBytes: ByteArray?, skin3DModelFilename: String?) {
