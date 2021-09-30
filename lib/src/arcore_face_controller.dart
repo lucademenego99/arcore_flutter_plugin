@@ -77,18 +77,18 @@ class ArCoreFaceController {
   }
 
   Future<dynamic> getMeshVertices() async {
-    return await (_channel.invokeListMethod<double>('getMeshVertices')
+    return await (_channel.invokeMethod('getMeshVertices')
         as FutureOr<List<dynamic>>);
   }
 
   Future<dynamic> getMeshTriangleIndices() async {
-    return await (_channel.invokeListMethod<int>('getMeshTriangleIndices'))
+    return await (_channel.invokeMethod('getMeshTriangleIndices'))
         as FutureOr<List<dynamic>>;
   }
 
   Future<dynamic> projectPoint(Vector3 point) async {
-    final projectPoint = await _channel.invokeListMethod<double>(
-        'projectPoint', {'point': vector3ToJson(point)});
+    final projectPoint = await _channel
+        .invokeMethod('projectPoint', {'point': vector3ToJson(point)});
     return projectPoint;
   }
 
