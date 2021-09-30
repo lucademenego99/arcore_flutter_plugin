@@ -137,12 +137,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     if (point != null) {
                         val imageDimensions = arSceneView?.arFrame?.camera?.getImageIntrinsics()?.getImageDimensions()
 
-                        val test = IntArray(2)
-                        test[0] = imageDimensions!![0];
-                        test[1] = imageDimensions!![1];
-
-                        result.success(test);
-
                         if (imageDimensions != null) {
                             val projmtx = FloatArray(16)
                             arSceneView?.arFrame?.camera?.getProjectionMatrix(projmtx, 0, 0.0001f, 2.0f)
@@ -157,9 +151,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                             anchorMatrix[11] = point.get(2);
 
                             val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
-                            val anchor_2d = worldToScreen(imageDimensions[0], imageDimensions[1], worldToScreenMatrix);
+                            val anchor_2d = worldToScreen(imageDimensions!![0], imageDimensions!![1], worldToScreenMatrix);
 
-                            // result.success(anchor_2d);
+                            result.success(anchor_2d);
                         } else {
                             result.error("noImageDimensionsFound", "No camera found on arFrame", null);
                         }
