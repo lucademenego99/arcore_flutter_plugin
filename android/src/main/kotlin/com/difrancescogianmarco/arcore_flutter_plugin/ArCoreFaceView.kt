@@ -153,6 +153,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         res[0] = imageDimensions!![0]
                         res[1] = imageDimensions!![1]
 
+                        result.success(res);
+
                         if (imageDimensions != null) {
                             val projmtx = FloatArray(16)
                             arSceneView?.arFrame?.camera?.getProjectionMatrix(projmtx, 0, 0.0001f, 2.0f)
