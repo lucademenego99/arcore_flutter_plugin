@@ -292,7 +292,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         // activity.applicationContext.getFilesDir().toString() //doesnt work!!
         // Environment.getExternalStorageDirectory()
         // val mPath: String =  Environment.getExternalStorageDirectory().toString() + "/DCIM/" + now + ".jpg"
-        val mPath: String =  activity.applicationContext.getExternalFilesDir(null).toString() + "/" + now + ".jpg"
+        val mPath: String =  activity.applicationContext.getExternalFilesDir(null).toString() + "/" + now + ".png"
         val mediaFile = File(mPath)
         debugLog(mediaFile.toString())
         //Log.i("path","fileoutputstream opened")
