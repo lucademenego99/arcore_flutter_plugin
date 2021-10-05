@@ -145,17 +145,11 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 "projectPoint" -> {
                     val map = call.arguments as HashMap<*, *>
                     val point = map["point"] as? ArrayList<Float>
+                    val width = map["width"] as? Int
+                    val height = map["height"] as? Int
 
                     if (point != null) {
-                        val imageDimensions = arSceneView?.arFrame?.camera?.getImageIntrinsics()?.getImageDimensions()
-
-                        val res = IntArray(2)
-                        res[0] = imageDimensions!![0]
-                        res[1] = imageDimensions!![1]
-
-                        result.success(res);
-
-                        if (imageDimensions != null) {
+                        if (width != null && height != null) {
                             val projmtx = FloatArray(16)
                             arSceneView?.arFrame?.camera?.getProjectionMatrix(projmtx, 0, 0.0001f, 2.0f)
 
@@ -170,12 +164,11 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
                             val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
 
-                            // val anchor_2d = worldToScreen(imageDimensions!![0], imageDimensions!![1], worldToScreenMatrix);
-                            val anchor_2d = worldToScreen(1080, 2112, worldToScreenMatrix);
+                            val anchor_2d = worldToScreen(width, height, worldToScreenMatrix);
 
-                            //result.success(anchor_2d);
+                            result.success(anchor_2d);
                         } else {
-                            result.error("noImageDimensionsFound", "No camera found on arFrame", null);
+                            result.error("noImageDimensionsFound", "The user didn't provide image dimensions", null);
                         }
                     } else {
                         result.error("noPointProvided", "The user didn't provide any point to project", null);

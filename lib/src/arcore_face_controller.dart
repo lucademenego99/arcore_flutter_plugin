@@ -89,9 +89,12 @@ class ArCoreFaceController {
     return result;
   }
 
-  Future<dynamic> projectPoint(Vector3 point) async {
+  Future<dynamic> projectPoint(
+      Vector3 point, int screenWidth, int screenHeight) async {
     final projectPoint = await _channel.invokeMethod('projectPoint', {
-      'point': [point.x, point.y, point.z].toList()
+      'point': [point.x, point.y, point.z].toList(),
+      'width': screenWidth,
+      'height': screenHeight
     });
     return projectPoint;
   }
