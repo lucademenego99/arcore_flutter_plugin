@@ -22,6 +22,7 @@ import com.google.ar.sceneform.rendering.Texture
 import com.google.ar.sceneform.ux.AugmentedFaceNode
 import com.google.mediapipe.components.FrameProcessor
 import com.google.mediapipe.formats.proto.LandmarkProto
+import com.google.mediapipe.framework.AndroidAssetUtil
 import com.google.mediapipe.framework.Packet
 import com.google.mediapipe.framework.PacketGetter
 import com.google.mediapipe.glutil.EglManager
@@ -49,6 +50,11 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
 
     init {
+        AndroidAssetUtil.initializeNativeAssetManager(context);
+        // Load all native libraries needed by the app.
+        System.loadLibrary("mediapipe_jni")
+        System.loadLibrary("opencv_java3")
+
         eglManager = EglManager(null);
         processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
