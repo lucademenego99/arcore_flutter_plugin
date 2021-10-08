@@ -63,9 +63,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
             try {
                 val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
-                if (landmarks == null) {
-                    return@addPacketCallback
-                }
                 methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
             } catch (e: Exception) {
                 return@addPacketCallback
