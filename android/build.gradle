@@ -52,7 +52,6 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'com.google.ar:core:1.13.0'
@@ -67,6 +66,7 @@ dependencies {
     implementation 'com.google.code.findbugs:jsr305:latest.release'
     implementation 'com.google.guava:guava:27.0.1-android'
     implementation 'com.google.protobuf:protobuf-javalite:3.14.0'
+    implementation fileTree(dir: 'mp-iris', include: ['*.aar', '*.jar'], exclude: [])
     // CameraX core library
     def camerax_version = "1.0.0-beta10"
     implementation "androidx.camera:camera-core:$camerax_version"
