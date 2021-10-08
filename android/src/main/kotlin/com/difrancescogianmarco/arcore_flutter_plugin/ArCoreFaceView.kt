@@ -22,11 +22,9 @@ import com.google.ar.sceneform.rendering.Texture
 import com.google.ar.sceneform.ux.AugmentedFaceNode
 import com.google.mediapipe.components.FrameProcessor
 import com.google.mediapipe.formats.proto.LandmarkProto
-import com.google.mediapipe.framework.AndroidAssetUtil
 import com.google.mediapipe.framework.Packet
 import com.google.mediapipe.framework.PacketGetter
 import com.google.mediapipe.glutil.EglManager
-import com.google.protobuf.InvalidProtocolBufferException
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -51,7 +49,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
 
     init {
-        AndroidAssetUtil.initializeNativeAssetManager(context);
         eglManager = EglManager(null);
         processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
@@ -70,7 +67,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     return@addPacketCallback
                 }
                 methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
-            } catch (e: InvalidProtocolBufferException) {
+            } catch () {
                 return@addPacketCallback
             }
         }
