@@ -50,7 +50,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
 
     init {
-        AndroidAssetUtil.initializeNativeAssetManager(context);
+        // AndroidAssetUtil.initializeNativeAssetManager(context);
         // Load all native libraries needed by the app.
         System.loadLibrary("mediapipe_jni")
         System.loadLibrary("opencv_java3")
