@@ -67,7 +67,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     return@addPacketCallback
                 }
                 methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
-            } catch () {
+            } catch (e: Exception) {
                 return@addPacketCallback
             }
         }
