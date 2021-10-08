@@ -52,8 +52,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     init {
         // AndroidAssetUtil.initializeNativeAssetManager(context);
         // Load all native libraries needed by the app.
-        System.loadLibrary("mediapipe_jni")
-        System.loadLibrary("opencv_java3")
+        // System.loadLibrary("mediapipe_jni")
+        // System.loadLibrary("opencv_java3")
 
         eglManager = EglManager(null);
         processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
