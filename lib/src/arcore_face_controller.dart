@@ -54,6 +54,7 @@ class ArCoreFaceController {
       case 'onGetIrisLandmarks':
         var landmarksString = call.arguments.toString();
         onGetIrisLandmarks(landmarksString);
+        break;
       default:
         if (debug) {
           print('Unknown method ${call.method}');
