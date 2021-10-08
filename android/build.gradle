@@ -52,6 +52,7 @@ android {
 }
 
 dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'com.google.ar:core:1.13.0'
@@ -75,8 +76,6 @@ dependencies {
     def auto_value_version = "1.8.1"
     implementation "com.google.auto.value:auto-value-annotations:$auto_value_version"
     annotationProcessor "com.google.auto.value:auto-value:$auto_value_version"
-
-    compileOnly files('libs/mp_iris_tracking_aar.aar')
 }
 
 afterEvaluate {
