@@ -9,6 +9,7 @@ import '../arcore_flutter_plugin.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 typedef FacesEventHandler = void Function(String transform);
+typedef IrisEventHandler = void Function(String landmarks);
 
 class ArCoreFaceController {
   ArCoreFaceController(
@@ -24,6 +25,7 @@ class ArCoreFaceController {
   StringResultHandler onError;
 
   FacesEventHandler onGetFacesNodes;
+  IrisEventHandler onGetIrisLandmarks;
 
   init() async {
     try {
@@ -49,6 +51,9 @@ class ArCoreFaceController {
         var matrixString = call.arguments.toString();
         onGetFacesNodes(matrixString);
         break;
+      case 'onGetIrisLandmarks':
+        var landmarksString = call.arguments.toString();
+        onGetIrisLandmarks(landmarksString);
       default:
         if (debug) {
           print('Unknown method ${call.method}');

@@ -2,42 +2,41 @@ package com.difrancescogianmarco.arcore_flutter_plugin
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import android.opengl.Matrix.*
+import android.os.Handler
+import android.os.HandlerThread
+import android.view.PixelCopy
 import com.difrancescogianmarco.arcore_flutter_plugin.utils.ArCoreUtils
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Config
 import com.google.ar.core.TrackingState
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.UnavailableException
-import com.google.ar.sceneform.ArSceneView
 import com.google.ar.sceneform.Scene
 import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.Renderable
 import com.google.ar.sceneform.rendering.Texture
 import com.google.ar.sceneform.ux.AugmentedFaceNode
+import com.google.mediapipe.components.FrameProcessor
+import com.google.mediapipe.formats.proto.LandmarkProto
+import com.google.mediapipe.framework.AndroidAssetUtil
+import com.google.mediapipe.framework.Packet
+import com.google.mediapipe.framework.PacketGetter
+import com.google.mediapipe.glutil.EglManager
+import com.google.protobuf.InvalidProtocolBufferException
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import kotlin.collections.HashMap
-import kotlin.math.*
-
-import android.graphics.Bitmap
-import android.os.Environment
-import android.os.Handler
-import android.view.PixelCopy
-import android.os.HandlerThread
-import android.content.ContextWrapper
-import java.io.FileOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlin.math.PI
+import kotlin.math.atan
 
 class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
-
     private val methodChannel2: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
     private val TAG: String = ArCoreFaceView::class.java.name
     private var faceRegionsRenderable: ModelRenderable? = null
@@ -45,7 +44,37 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private val faceNodeMap = HashMap<AugmentedFace, AugmentedFaceNode>()
     private var faceSceneUpdateListener: Scene.OnUpdateListener
 
+    private var eglManager: EglManager? = null
+    private var processor: FrameProcessor? = null
+
+    private val FOCAL_LENGTH_STREAM_NAME = "focal_length_pixel"
+    private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
+
     init {
+        AndroidAssetUtil.initializeNativeAssetManager(context);
+        eglManager = EglManager(null);
+        processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
+        processor!!.videoSurfaceOutput.setFlipY(true)
+        val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(1)
+        var focalLenghtSidePacket = focalLength?.let { processor!!.packetCreator.createFloat32(it) }
+        val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
+        processor!!.setInputSidePackets(inputSidePackets)
+
+        processor!!.addPacketCallback(
+                OUTPUT_LANDMARKS_STREAM_NAME
+        ) { packet: Packet ->
+            val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
+            try {
+                val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
+                if (landmarks == null) {
+                    return@addPacketCallback
+                }
+                methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
+            } catch (e: InvalidProtocolBufferException) {
+                return@addPacketCallback
+            }
+        }
+
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
                 //                if (faceRegionsRenderable == null || faceMeshTexture == null) {
@@ -96,6 +125,16 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
             }
         }
+    }
+
+    private fun getLandmarksDebugString(landmarks: LandmarkProto.NormalizedLandmarkList): String? {
+        var landmarkIndex = 0
+        var landmarksString = ""
+        for (landmark in landmarks.landmarkList) {
+            landmarksString += """[$landmarkIndex]: (${landmark.x}, ${landmark.y}, ${landmark.z})"""
+            ++landmarkIndex
+        }
+        return landmarksString
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
