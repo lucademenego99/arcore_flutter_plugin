@@ -50,13 +50,13 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
 
     init {
+        System.loadLibrary("mediapipe_jni")
         AndroidAssetUtil.initializeNativeAssetManager(context);
         // Load all native libraries needed by the app.
-        // System.loadLibrary("mediapipe_jni")
         // System.loadLibrary("opencv_java3")
 
         eglManager = EglManager(null);
-        processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
+        processor = FrameProcessor(context, eglManager!!.getNativeContext(), "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
         val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(1)
         var focalLenghtSidePacket = focalLength?.let { processor!!.packetCreator.createFloat32(it) }
