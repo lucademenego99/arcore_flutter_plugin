@@ -60,7 +60,7 @@ class ArCoreUtils {
                     //                    ArCoreApk.InstallStatus.INSTALLED -> {}
                     else -> {
                         if (isFrontCamera) {
-                            Session(activity, EnumSet.of(Session.Feature.FRONT_CAMERA, Session.Feature.FRONT_CAMERA))
+                            Session(activity, EnumSet.of(Session.Feature.SHARED_CAMERA, Session.Feature.FRONT_CAMERA))
                         } else {
                             Session(activity)
                         }
