@@ -32,6 +32,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import javax.microedition.khronos.egl.EGL
 import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLContext
 import kotlin.math.PI
@@ -57,7 +58,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         System.loadLibrary("opencv_java3")
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
-        eglManager = EglManager(EGLContext.getEGL())
+        eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
         processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
 
