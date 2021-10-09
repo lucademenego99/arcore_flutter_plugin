@@ -58,22 +58,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         eglManager = EglManager(null);
         processor = FrameProcessor(context, eglManager!!.getNativeContext(), "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
-        val focalLength = arSceneView!!.arFrame!!.camera.imageIntrinsics.focalLength[1]
-        var focalLenghtSidePacket = processor!!.getPacketCreator().createFloat32(focalLength!!)
-        val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
-        processor!!.setInputSidePackets(inputSidePackets)
-
-        processor!!.addPacketCallback(
-                OUTPUT_LANDMARKS_STREAM_NAME
-        ) { packet: Packet ->
-            val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
-            try {
-                val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
-                methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
-            } catch (e: Exception) {
-                return@addPacketCallback
-            }
-        }
 
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
@@ -215,6 +199,29 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
                 "takeScreenshot" -> {
                     takeScreenshot(call, result);
+                }
+                "enableIrisTracking" -> {
+                    val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(1)
+                    if (focalLength != null) {
+                        var focalLenghtSidePacket = processor!!.getPacketCreator().createFloat32(focalLength!!)
+                        val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
+                        processor!!.setInputSidePackets(inputSidePackets)
+
+                        processor!!.addPacketCallback(
+                                OUTPUT_LANDMARKS_STREAM_NAME
+                        ) { packet: Packet ->
+                            val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
+                            try {
+                                val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
+                                methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
+                            } catch (e: Exception) {
+                                return@addPacketCallback
+                            }
+                        }
+                        result.success(true)
+                    } else {
+                        result.error("noFocalLength", "Focal length of the camera not found", null)
+                    }
                 }
                 "dispose" -> {
                     debugLog( " updateMaterials")
