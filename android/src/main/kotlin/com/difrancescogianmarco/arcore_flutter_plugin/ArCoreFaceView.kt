@@ -32,6 +32,8 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import javax.microedition.khronos.egl.EGL10
+import javax.microedition.khronos.egl.EGLContext
 import kotlin.math.PI
 import kotlin.math.atan
 
@@ -55,8 +57,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         System.loadLibrary("opencv_java3")
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
-        eglManager = EglManager(null);
-        processor = FrameProcessor(context, eglManager!!.getNativeContext(), "iris_tracking_gpu.binarypb", "input_video","output_video")
+        eglManager = EglManager(EGLContext.getEGL())
+        processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
 
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
@@ -203,7 +205,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 "enableIrisTracking" -> {
                     val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(1)
                     if (focalLength != null) {
-                        var focalLenghtSidePacket = processor!!.getPacketCreator().createFloat32(focalLength!!)
+                        var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength!!)
                         val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
                         processor!!.setInputSidePackets(inputSidePackets)
 
