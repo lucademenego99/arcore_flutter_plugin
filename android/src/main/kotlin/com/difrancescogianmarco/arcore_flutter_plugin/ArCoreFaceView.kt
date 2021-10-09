@@ -206,6 +206,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 "enableIrisTracking" -> {
                     val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(1)
                     if (focalLength != null) {
+                        methodChannel2.invokeMethod("onGetIrisLandmarks", "focalLength: $focalLength")
                         var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength!!)
                         val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
                         processor!!.setInputSidePackets(inputSidePackets)
