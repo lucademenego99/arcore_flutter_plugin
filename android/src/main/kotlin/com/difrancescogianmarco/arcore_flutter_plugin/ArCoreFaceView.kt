@@ -8,7 +8,6 @@ import android.net.Uri
 import android.opengl.Matrix.*
 import android.os.Handler
 import android.os.HandlerThread
-import android.view.PixelCopy
 import com.difrancescogianmarco.arcore_flutter_plugin.utils.ArCoreUtils
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Config
@@ -33,11 +32,14 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import javax.microedition.khronos.egl.EGL
 import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLContext
 import kotlin.math.PI
 import kotlin.math.atan
+
+import android.graphics.SurfaceTexture
+import android.view.*
+import android.view.SurfaceHolder
 
 class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
     private val methodChannel2: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
@@ -50,6 +52,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private var eglManager: EglManager? = null
     private var processor: FrameProcessor? = null
     private var converter: ExternalTextureConverter? = null
+    private var previewDisplayView: SurfaceView? = null
+    private var previewFrameTexture: SurfaceTexture? = null
 
     private val FOCAL_LENGTH_STREAM_NAME = "focal_length_pixel"
     private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
@@ -66,6 +70,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         converter = ExternalTextureConverter(eglManager!!.context)
         converter!!.setFlipY(true)
         converter!!.setConsumer(processor!!)
+
+        previewDisplayView = SurfaceView(context)
+        setupPreviewDisplayView()
 
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
@@ -116,6 +123,37 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     }
                 }
             }
+        }
+    }
+
+    private fun setupPreviewDisplayView() {
+        previewDisplayView!!.visibility = View.GONE
+        previewDisplayView!!
+                .holder
+                .addCallback(
+                        object : SurfaceHolder.Callback {
+                            override fun surfaceCreated(holder: SurfaceHolder) {
+                                processor!!.videoSurfaceOutput.setSurface(holder.surface)
+                            }
+
+                            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+                                onPreviewDisplaySurfaceChanged(holder, format, width, height)
+                            }
+
+                            override fun surfaceDestroyed(holder: SurfaceHolder) {
+                                processor!!.videoSurfaceOutput.setSurface(null)
+                            }
+                        })
+    }
+
+    protected fun onPreviewDisplaySurfaceChanged(
+            holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
+        previewFrameTexture = arSceneView?.session?.sharedCamera?.surfaceTexture
+        if (previewFrameTexture != null) {
+            converter!!.setSurfaceTextureAndAttachToGLContext(
+                    previewFrameTexture,
+                    arSceneView!!.width,
+                    arSceneView!!.height)
         }
     }
 
@@ -215,30 +253,24 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
                     val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
                     if (focalLength != null) {
-                        var surfaceTexture = arSceneView?.session?.sharedCamera?.surfaceTexture
-                        if (surfaceTexture != null) {
-                            converter!!.setSurfaceTextureAndAttachToGLContext(surfaceTexture, width!!, height!!)
-                            var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength!!)
-                            val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
-                            methodChannel2.invokeMethod("onGetIrisLandmarks", "inputSidePacket: ${inputSidePackets[FOCAL_LENGTH_STREAM_NAME]}")
-                            processor!!.setInputSidePackets(inputSidePackets)
+                        var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength)
+                        val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
+                        methodChannel2.invokeMethod("onGetIrisLandmarks", "inputSidePacket: ${inputSidePackets[FOCAL_LENGTH_STREAM_NAME]}")
+                        processor!!.setInputSidePackets(inputSidePackets)
 
-                            processor!!.addPacketCallback(
-                                    OUTPUT_LANDMARKS_STREAM_NAME
-                            ) { packet: Packet ->
-                                methodChannel2.invokeMethod("onGetIrisLandmarks", "INSIDE PACKET CALLBACK")
-                                val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
-                                try {
-                                    val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
-                                    methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
-                                } catch (e: Exception) {
-                                    return@addPacketCallback
-                                }
+                        processor!!.addPacketCallback(
+                                OUTPUT_LANDMARKS_STREAM_NAME
+                        ) { packet: Packet ->
+                            methodChannel2.invokeMethod("onGetIrisLandmarks", "INSIDE PACKET CALLBACK")
+                            val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
+                            try {
+                                val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
+                                methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
+                            } catch (e: Exception) {
+                                return@addPacketCallback
                             }
-                            result.success(true)
-                        } else {
-                            result.error("noSurfaceTexture", "Surface Texture not found", null)
                         }
+                        result.success(true)
                     } else {
                         result.error("noFocalLength", "Focal length of the camera not found", null)
                     }
@@ -325,7 +357,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             // create bitmap screen capture
 
             // Create a bitmap the size of the scene view.
-            val bitmap: Bitmap = Bitmap.createBitmap(arSceneView!!.getWidth(), arSceneView!!.getHeight(),
+            val bitmap: Bitmap = Bitmap.createBitmap(arSceneView!!.width, arSceneView!!.height,
                     Bitmap.Config.ARGB_8888)
 
             // Create a handler thread to offload the processing of the image.
