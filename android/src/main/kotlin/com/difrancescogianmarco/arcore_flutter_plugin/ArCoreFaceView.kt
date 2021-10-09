@@ -20,6 +20,7 @@ import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.Renderable
 import com.google.ar.sceneform.rendering.Texture
 import com.google.ar.sceneform.ux.AugmentedFaceNode
+import com.google.mediapipe.components.ExternalTextureConverter
 import com.google.mediapipe.components.FrameProcessor
 import com.google.mediapipe.formats.proto.LandmarkProto
 import com.google.mediapipe.framework.AndroidAssetUtil
@@ -48,6 +49,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
     private var eglManager: EglManager? = null
     private var processor: FrameProcessor? = null
+    private var converter: ExternalTextureConverter? = null
 
     private val FOCAL_LENGTH_STREAM_NAME = "focal_length_pixel"
     private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
@@ -61,6 +63,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
         processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
+        converter = ExternalTextureConverter(eglManager!!.context)
+        converter!!.setFlipY(true)
+        converter!!.setConsumer(processor!!)
 
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
@@ -102,7 +107,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val list = faceNodeMap.toList().map { it.first }
                     if (list.size > 0) {
                         val dest = FloatArray(16)
-                        list[0].getCenterPose().toMatrix(dest, 0);
+                        list[0].centerPose.toMatrix(dest, 0);
                         val doubleArray = DoubleArray(dest.size)
                         for ((i, a) in dest.withIndex()) {
                             doubleArray[i] = a.toDouble()
@@ -204,27 +209,36 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     takeScreenshot(call, result);
                 }
                 "enableIrisTracking" -> {
+                    val map = call.arguments as HashMap<*, *>
+                    val width = map["width"] as? Int
+                    val height = map["height"] as? Int
+
                     val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
                     if (focalLength != null) {
-                        methodChannel2.invokeMethod("onGetIrisLandmarks", "focalLength: $focalLength")
-                        var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength!!)
-                        val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
-                        methodChannel2.invokeMethod("onGetIrisLandmarks", "inputSidePacket: ${inputSidePackets.toString()}")
-                        processor!!.setInputSidePackets(inputSidePackets)
+                        var surfaceTexture = arSceneView?.session?.sharedCamera?.surfaceTexture
+                        if (surfaceTexture != null) {
+                            converter!!.setSurfaceTextureAndAttachToGLContext(surfaceTexture, width!!, height!!)
+                            var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength!!)
+                            val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
+                            methodChannel2.invokeMethod("onGetIrisLandmarks", "inputSidePacket: ${inputSidePackets[FOCAL_LENGTH_STREAM_NAME]}")
+                            processor!!.setInputSidePackets(inputSidePackets)
 
-                        processor!!.addPacketCallback(
-                                OUTPUT_LANDMARKS_STREAM_NAME
-                        ) { packet: Packet ->
-                            methodChannel2.invokeMethod("onGetIrisLandmarks", "INSIDE PACKET CALLBACK")
-                            val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
-                            try {
-                                val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
-                                methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
-                            } catch (e: Exception) {
-                                return@addPacketCallback
+                            processor!!.addPacketCallback(
+                                    OUTPUT_LANDMARKS_STREAM_NAME
+                            ) { packet: Packet ->
+                                methodChannel2.invokeMethod("onGetIrisLandmarks", "INSIDE PACKET CALLBACK")
+                                val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
+                                try {
+                                    val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
+                                    methodChannel2.invokeMethod("onGetIrisLandmarks", getLandmarksDebugString(landmarks))
+                                } catch (e: Exception) {
+                                    return@addPacketCallback
+                                }
                             }
+                            result.success(true)
+                        } else {
+                            result.error("noSurfaceTexture", "Surface Texture not found", null)
                         }
-                        result.success(true)
                     } else {
                         result.error("noFocalLength", "Focal length of the camera not found", null)
                     }

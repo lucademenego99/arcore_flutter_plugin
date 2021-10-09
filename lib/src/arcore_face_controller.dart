@@ -109,8 +109,11 @@ class ArCoreFaceController {
     return _channel.invokeMethod('takeScreenshot');
   }
   
-  Future<dynamic> enableIrisTracking() async {
-	return _channel.invokeMethod('enableIrisTracking');
+  Future<dynamic> enableIrisTracking(int screenWidth, int screenHeight) async {
+	return _channel.invokeMethod('enableIrisTracking', {
+	  'width': screenWidth,
+	  'height': screenHeight
+	});
   }
 
   void dispose() {
