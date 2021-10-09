@@ -58,8 +58,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         eglManager = EglManager(null);
         processor = FrameProcessor(context, eglManager!!.getNativeContext(), "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
-        val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(1)
-        var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength!!)
+        val focalLength = arSceneView!!.arFrame!!.camera.imageIntrinsics.focalLength[1]
+        var focalLenghtSidePacket = processor!!.getPacketCreator().createFloat32(focalLength!!)
         val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
         processor!!.setInputSidePackets(inputSidePackets)
 
