@@ -204,16 +204,18 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     takeScreenshot(call, result);
                 }
                 "enableIrisTracking" -> {
-                    val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(1)
+                    val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
                     if (focalLength != null) {
                         methodChannel2.invokeMethod("onGetIrisLandmarks", "focalLength: $focalLength")
                         var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength!!)
                         val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
+                        methodChannel2.invokeMethod("onGetIrisLandmarks", "inputSidePacket: ${inputSidePackets.toString()}")
                         processor!!.setInputSidePackets(inputSidePackets)
 
                         processor!!.addPacketCallback(
                                 OUTPUT_LANDMARKS_STREAM_NAME
                         ) { packet: Packet ->
+                            methodChannel2.invokeMethod("onGetIrisLandmarks", "INSIDE PACKET CALLBACK")
                             val landmarksRaw: ByteArray = PacketGetter.getProtoBytes(packet)
                             try {
                                 val landmarks: LandmarkProto.NormalizedLandmarkList = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
