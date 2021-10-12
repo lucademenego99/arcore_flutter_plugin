@@ -237,8 +237,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val displayWidth = map["width"] as? Int
                     val displayHeight = map["height"] as? Int
 
-                    converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displayWidth!!, displayHeight!!)
-
                     arSceneView?.holder?.addCallback(object : SurfaceHolder.Callback {
                         override fun surfaceCreated(holder: SurfaceHolder?) {
                             processor!!.videoSurfaceOutput.setSurface(holder!!.surface);
