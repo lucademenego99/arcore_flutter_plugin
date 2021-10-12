@@ -4,10 +4,19 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.graphics.SurfaceTexture
+import android.hardware.camera2.*
+import android.hardware.camera2.CameraCaptureSession.CaptureCallback
+import android.media.Image
+import android.media.ImageReader
 import android.net.Uri
 import android.opengl.Matrix.*
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Size
+import android.view.*
+import androidx.annotation.NonNull
 import com.difrancescogianmarco.arcore_flutter_plugin.utils.ArCoreUtils
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Config
@@ -32,19 +41,14 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.*
 import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLContext
+import kotlin.collections.HashMap
 import kotlin.math.PI
 import kotlin.math.atan
 
-import android.graphics.SurfaceTexture
-import android.util.Size
-import android.view.*
-import android.view.SurfaceHolder
-import com.google.mediapipe.components.CameraHelper
-import com.google.mediapipe.components.CameraXPreviewHelper
-
-class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
+class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug), ImageReader.OnImageAvailableListener, SurfaceTexture.OnFrameAvailableListener {
     private val methodChannel2: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
     private val TAG: String = ArCoreFaceView::class.java.name
     private var faceRegionsRenderable: ModelRenderable? = null
@@ -57,6 +61,30 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private var converter: ExternalTextureConverter? = null
     private var previewDisplayView: SurfaceView? = null
     private var previewFrameTexture: SurfaceTexture? = null
+
+    // Looper handler thread.
+    private var backgroundThread: HandlerThread? = null
+
+    // Looper handler.
+    private var backgroundHandler: Handler? = null
+
+    // Camera device. Used by both non-AR and AR modes.
+    private var cameraDevice: CameraDevice? = null
+
+    // Camera capture session. Used by both non-AR and AR modes.
+    private var captureSession: CameraCaptureSession? = null
+
+    // Image reader that continuously processes CPU images.
+    private val cpuImageReader: ImageReader? = null
+
+    // Camera preview capture request builder
+    private var previewCaptureRequestBuilder: CaptureRequest.Builder? = null
+
+    // Whether the app is currently in AR mode. Initial value determines initial state.
+    private val arMode = true
+
+    // Whether ARCore is currently active.
+    private var arcoreActive = true
 
     private val FOCAL_LENGTH_STREAM_NAME = "focal_length_pixel"
     private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
@@ -80,6 +108,22 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         converter!!.setConsumer(processor!!)
 
         previewDisplayView = SurfaceView(activity)
+
+        // Store the ID of the camera used by ARCore.
+        val cameraId = arSceneView?.session?.cameraConfig?.cameraId;
+        // Use the currently configured CPU image size.
+
+        // Use the currently configured CPU image size.
+        val desiredCpuImageSize: Size? = arSceneView?.session?.cameraConfig?.imageSize
+        var cpuImageReader =
+                ImageReader.newInstance(
+                        desiredCpuImageSize!!.width,
+                        desiredCpuImageSize!!.height,
+                        ImageFormat.YUV_420_888,
+                        2);
+        cpuImageReader.setOnImageAvailableListener(this, backgroundHandler);
+        // When ARCore is running, make sure it also updates our CPU image surface.
+        arSceneView?.session?.sharedCamera?.setAppSurfaces(cameraId, Arrays.asList(cpuImageReader.getSurface()));
 
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
@@ -223,6 +267,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     takeScreenshot(call, result);
                 }
                 "enableIrisTracking" -> {
+                    pauseARCore()
+                    resumeCamera2()
 
                     /*var cameraHelper = CameraXPreviewHelper()
                     cameraHelper.setOnCameraStartedListener { surfaceTexture: SurfaceTexture? ->
@@ -232,6 +278,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         previewDisplayView!!.visibility = View.VISIBLE
                     }
                     cameraHelper.startCamera(activity, CameraHelper.CameraFacing.FRONT, null)*/
+
+                    arSceneView!!.session!!.pause()
+                    setRepeatingCaptureRequest()
 
                     methodChannel2.invokeMethod("onGetIrisLandmarks", "PROCESSOR: ${processor}, SURFACE: ${arSceneView!!.holder.surface.isValid}")
                     val map = call.arguments as HashMap<*, *>
@@ -293,6 +342,193 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         }else{
             debugLog("Impossible call " + call.method + " method on unsupported device")
             result.error("Unsupported Device","",null)
+        }
+    }
+
+    // Called when starting non-AR mode or switching to non-AR mode.
+    // Also called when app starts in AR mode, or resumes in AR mode.
+    private fun setRepeatingCaptureRequest() {
+        /*try {*/
+            captureSession?.setRepeatingRequest(
+                    previewCaptureRequestBuilder!!.build(), cameraCaptureCallback, backgroundHandler)
+/*        } catch (e: CameraAccessException) {
+
+        }*/
+    }
+
+    private fun resumeARCore() {
+        // Ensure that session is valid before triggering ARCore resume. Handles the case where the user
+        // manually uninstalls ARCore while the app is paused and then resumes.
+        if (arSceneView?.session == null) {
+            return
+        }
+        if (!arcoreActive) {
+            try {
+                // To avoid flicker when resuming ARCore mode inform the renderer to not suppress rendering
+                // of the frames with zero timestamp.
+                // backgroundRenderer.suppressTimestampZeroRendering(false)
+                // Resume ARCore.
+                arSceneView!!.session!!.resume()
+                arcoreActive = true
+
+                // Set capture session callback while in AR mode.
+                arSceneView!!.session!!.sharedCamera!!.setCaptureCallback(cameraCaptureCallback, backgroundHandler)
+            } catch (e: CameraNotAvailableException) {
+                return
+            }
+        }
+    }
+
+    private fun pauseARCore() {
+        if (arcoreActive) {
+            // Pause ARCore.
+            arSceneView!!.session!!.pause()
+            arcoreActive = false
+        }
+    }
+
+    private fun resumeCamera2() {
+        setRepeatingCaptureRequest()
+        arSceneView!!.session!!.sharedCamera.surfaceTexture.setOnFrameAvailableListener(this)
+    }
+
+    // Start background handler thread, used to run callbacks without blocking UI thread.
+    private fun startBackgroundThread() {
+        backgroundThread = HandlerThread("sharedCameraBackground")
+        backgroundThread!!.start()
+        backgroundHandler = Handler(backgroundThread!!.getLooper())
+    }
+
+    // Repeating camera capture session capture callback.
+    private val cameraCaptureCallback: CaptureCallback = object : CaptureCallback() {
+        override fun onCaptureCompleted(
+                session: CameraCaptureSession,
+                request: CaptureRequest,
+                result: TotalCaptureResult) {
+        }
+
+        override fun onCaptureBufferLost(
+                session: CameraCaptureSession,
+                request: CaptureRequest,
+                target: Surface,
+                frameNumber: Long) {
+        }
+
+        override fun onCaptureFailed(
+                session: CameraCaptureSession,
+                request: CaptureRequest,
+                failure: CaptureFailure) {
+        }
+
+        override fun onCaptureSequenceAborted(
+                session: CameraCaptureSession, sequenceId: Int) {
+        }
+    }
+
+    // Repeating camera capture session state callback.
+    var cameraSessionStateCallback: CameraCaptureSession.StateCallback = object : CameraCaptureSession.StateCallback() {
+        // Called when the camera capture session is first configured after the app
+        // is initialized, and again each time the activity is resumed.
+        override fun onConfigured(@NonNull session: CameraCaptureSession) {
+            captureSession = session
+            if (arMode) {
+                setRepeatingCaptureRequest()
+                // Note, resumeARCore() must be called in onActive(), not here.
+            } else {
+                // Calls `setRepeatingCaptureRequest()`.
+                resumeCamera2()
+            }
+        }
+
+        override fun onSurfacePrepared(session: CameraCaptureSession, surface: Surface) {
+
+        }
+
+        override fun onReady(session: CameraCaptureSession) {
+        }
+
+        override fun onActive(session: CameraCaptureSession) {
+
+            if (arMode && !arcoreActive) {
+                resumeARCore()
+            }
+            /*synchronized(this@SharedCameraActivity) {
+                captureSessionChangesPossible = true
+                this@SharedCameraActivity.notify()
+            }*/
+        }
+
+        override fun onCaptureQueueEmpty(session: CameraCaptureSession) {
+
+        }
+
+        override fun onClosed(session: CameraCaptureSession) {
+
+        }
+
+        override fun onConfigureFailed(p0: CameraCaptureSession) {
+
+        }
+    }
+
+    // Camera device state callback.
+    private val cameraDeviceCallback: CameraDevice.StateCallback = object : CameraDevice.StateCallback() {
+        override fun onOpened(cameraDevice2: CameraDevice) {
+
+            cameraDevice = cameraDevice2
+            createCameraPreviewSession()
+        }
+
+        override fun onClosed(cameraDevice2: CameraDevice) {
+            cameraDevice = null
+
+        }
+
+        override fun onDisconnected(cameraDevice2: CameraDevice) {
+
+            cameraDevice2?.close()
+            cameraDevice = null
+        }
+
+        override fun onError(cameraDevice2: CameraDevice, error: Int) {
+
+            cameraDevice2?.close()
+            cameraDevice = null
+
+        }
+    }
+
+    private fun createCameraPreviewSession() {
+        try {
+            // arSceneView!!.session!!.setCameraTextureName(backgroundRenderer.getTextureId())
+            arSceneView!!.session!!.sharedCamera.surfaceTexture.setOnFrameAvailableListener(this)
+
+            // Create an ARCore compatible capture request using `TEMPLATE_RECORD`.
+            previewCaptureRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
+
+            // Build surfaces list, starting with ARCore provided surfaces.
+            val surfaceList = arSceneView!!.session!!.sharedCamera.arCoreSurfaces
+
+            // Add a CPU image reader surface. On devices that don't support CPU image access, the image
+            // may arrive significantly later, or not arrive at all.
+            surfaceList.add(cpuImageReader!!.surface)
+
+            // Surface list should now contain three surfaces:
+            // 0. sharedCamera.getSurfaceTexture()
+            // 1. …
+            // 2. cpuImageReader.getSurface()
+
+            // Add ARCore surfaces and CPU image surface targets.
+            /*for (surface in surfaceList) {
+                previewCaptureRequestBuilder.addTarget(surface)
+            }*/
+
+            // Wrap our callback in a shared camera callback.
+            val wrappedCallback: CameraCaptureSession.StateCallback = arSceneView!!.session!!.sharedCamera.createARSessionStateCallback(cameraSessionStateCallback, backgroundHandler)
+
+            // Create camera capture session for camera preview using ARCore wrapped callback.
+            cameraDevice!!.createCaptureSession(surfaceList, wrappedCallback, backgroundHandler)
+        } catch (e: CameraAccessException) {
         }
     }
 
@@ -423,6 +659,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     }
 
     override fun onResume() {
+        startBackgroundThread()
         if (arSceneView == null) {
             return
         }
@@ -466,6 +703,18 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     override fun onDestroy() {
         arSceneView?.scene?.removeOnUpdateListener(faceSceneUpdateListener)
         super.onDestroy()
+    }
+
+    override fun onImageAvailable(imageReader: ImageReader) {
+        val image: Image = imageReader.acquireLatestImage()
+        if (image == null) {
+            return
+        }
+
+        image.close()
+    }
+
+    override fun onFrameAvailable(p0: SurfaceTexture?) {
     }
 
 }
