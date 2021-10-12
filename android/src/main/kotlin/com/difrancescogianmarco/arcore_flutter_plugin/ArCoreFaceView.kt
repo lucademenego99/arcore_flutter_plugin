@@ -257,7 +257,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         }
                     })
 
-                    val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
+                    //val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
+                    val focalLength = cameraHelper.focalLengthPixels
                     if (focalLength != null) {
                         var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength)
                         val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
