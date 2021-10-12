@@ -223,6 +223,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
                 "enableIrisTracking" -> {
 
+                    arSceneView!!.session!!.pause()
+
                     var cameraHelper = CameraXPreviewHelper()
                     cameraHelper.setOnCameraStartedListener { surfaceTexture: SurfaceTexture? ->
                         previewFrameTexture = surfaceTexture
@@ -237,7 +239,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val displayWidth = map["width"] as? Int
                     val displayHeight = map["height"] as? Int
 
-                    arSceneView?.holder?.addCallback(object : SurfaceHolder.Callback {
+                    previewDisplayView?.holder?.addCallback(object : SurfaceHolder.Callback {
                         override fun surfaceCreated(holder: SurfaceHolder?) {
                             processor!!.videoSurfaceOutput.setSurface(holder!!.surface);
                         }
