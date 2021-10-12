@@ -58,10 +58,15 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private val FOCAL_LENGTH_STREAM_NAME = "focal_length_pixel"
     private val OUTPUT_LANDMARKS_STREAM_NAME = "face_landmarks_with_iris"
 
+    companion object {
+        init {
+            // Load all native libraries needed by the app.
+            System.loadLibrary("mediapipe_jni")
+            System.loadLibrary("opencv_java3")
+        }
+    }
+
     init {
-        // Load all native libraries needed by the app.
-        System.loadLibrary("mediapipe_jni")
-        System.loadLibrary("opencv_java3")
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
         eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
@@ -215,13 +220,14 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     takeScreenshot(call, result);
                 }
                 "enableIrisTracking" -> {
+                    processor!!.videoSurfaceOutput.setSurface(arSceneView!!.holder!!.surface);
                     val map = call.arguments as HashMap<*, *>
                     val displayWidth = map["width"] as? Int
                     val displayHeight = map["height"] as? Int
 
                     arSceneView?.holder?.addCallback(object : SurfaceHolder.Callback {
                         override fun surfaceCreated(holder: SurfaceHolder?) {
-                            converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displayWidth!!, displayHeight!!)
+                            processor!!.videoSurfaceOutput.setSurface(holder!!.surface);
                         }
 
                         override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
