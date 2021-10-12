@@ -49,7 +49,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private var faceRegionsRenderable: ModelRenderable? = null
     private var faceMeshTexture: Texture? = null
     private val faceNodeMap = HashMap<AugmentedFace, AugmentedFaceNode>()
-    private var faceSceneUpdateListener: Scene.OnUpdateListener
+    // private var faceSceneUpdateListener: Scene.OnUpdateListener
 
     private var eglManager: EglManager? = null
     private var processor: FrameProcessor? = null
@@ -69,6 +69,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     }
 
     init {
+        arSceneView!!.session!!.pause()
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
         eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
@@ -80,7 +81,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
         previewDisplayView = SurfaceView(context)
 
-        faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
+        /*faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
                 //                if (faceRegionsRenderable == null || faceMeshTexture == null) {
                 // if (faceMeshTexture == null) {
@@ -130,6 +131,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
             }
         }
+        */
     }
 
     private fun getLandmarksDebugString(landmarks: LandmarkProto.NormalizedLandmarkList): String? {
@@ -222,8 +224,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     takeScreenshot(call, result);
                 }
                 "enableIrisTracking" -> {
-
-                    arSceneView!!.session!!.pause()
 
                     var cameraHelper = CameraXPreviewHelper()
                     cameraHelper.setOnCameraStartedListener { surfaceTexture: SurfaceTexture? ->
@@ -411,7 +411,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             // This is important to make sure that the camera stream renders first so that
             // the face mesh occlusion works correctly.
             arSceneView?.cameraStreamRenderPriority = Renderable.RENDER_PRIORITY_FIRST
-            arSceneView?.scene?.addOnUpdateListener(faceSceneUpdateListener)
+            //arSceneView?.scene?.addOnUpdateListener(faceSceneUpdateListener)
         }
 
         result.success(null)
@@ -459,7 +459,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     }
 
     override fun onDestroy() {
-        arSceneView?.scene?.removeOnUpdateListener(faceSceneUpdateListener)
+        //arSceneView?.scene?.removeOnUpdateListener(faceSceneUpdateListener)
         super.onDestroy()
     }
 
