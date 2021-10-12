@@ -69,7 +69,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     init {
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
-        eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
+        // eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
+        eglManager = EglManager(null)
         processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
         converter = ExternalTextureConverter(eglManager!!.context)
