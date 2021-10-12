@@ -426,7 +426,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             return
         }
 
-        if (arSceneView?.session == null) {
+        /*if (arSceneView?.session == null) {
 
             // request camera permission if not already requested
             if (!ArCoreUtils.hasCameraPermission(activity)) {
@@ -458,7 +458,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             ArCoreUtils.displayError(activity, "Unable to get camera", ex)
             activity.finish()
             return
-        }
+        }*/
 
     }
 
