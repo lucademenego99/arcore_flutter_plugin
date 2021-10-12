@@ -70,7 +70,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     }
 
     init {
-        arSceneView!!.session!!.pause()
+        arSceneView?.session?.pause()
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
         eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
@@ -150,7 +150,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             debugLog(call.method +"called on supported device")
             when (call.method) {
                 "init" -> {
-                    arScenViewInit(call, result)
+                    //arScenViewInit(call, result)
                 }
                 "loadMesh" -> {
                     val map = call.arguments as HashMap<*, *>
