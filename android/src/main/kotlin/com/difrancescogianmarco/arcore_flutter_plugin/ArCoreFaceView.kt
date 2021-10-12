@@ -109,22 +109,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
         previewDisplayView = SurfaceView(activity)
 
-        // Store the ID of the camera used by ARCore.
-        val cameraId = arSceneView?.session?.cameraConfig?.cameraId;
-        // Use the currently configured CPU image size.
-
-        // Use the currently configured CPU image size.
-        val desiredCpuImageSize: Size? = arSceneView?.session?.cameraConfig?.imageSize
-        var cpuImageReader =
-                ImageReader.newInstance(
-                        desiredCpuImageSize!!.width,
-                        desiredCpuImageSize!!.height,
-                        ImageFormat.YUV_420_888,
-                        2);
-        cpuImageReader.setOnImageAvailableListener(this, backgroundHandler);
-        // When ARCore is running, make sure it also updates our CPU image surface.
-        arSceneView?.session?.sharedCamera?.setAppSurfaces(cameraId, Arrays.asList(cpuImageReader.getSurface()));
-
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
                 //                if (faceRegionsRenderable == null || faceMeshTexture == null) {
@@ -267,6 +251,23 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     takeScreenshot(call, result);
                 }
                 "enableIrisTracking" -> {
+
+                    // Store the ID of the camera used by ARCore.
+                    val cameraId = arSceneView?.session?.cameraConfig?.cameraId;
+                    // Use the currently configured CPU image size.
+
+                    // Use the currently configured CPU image size.
+                    val desiredCpuImageSize: Size = arSceneView!!.session!!.cameraConfig!!.imageSize
+                    var cpuImageReader =
+                            ImageReader.newInstance(
+                                    desiredCpuImageSize.width,
+                                    desiredCpuImageSize.height,
+                                    ImageFormat.YUV_420_888,
+                                    2);
+                    cpuImageReader.setOnImageAvailableListener(this, backgroundHandler);
+                    // When ARCore is running, make sure it also updates our CPU image surface.
+                    arSceneView?.session?.sharedCamera?.setAppSurfaces(cameraId, listOf(cpuImageReader.surface));
+
                     pauseARCore()
                     resumeCamera2()
 
