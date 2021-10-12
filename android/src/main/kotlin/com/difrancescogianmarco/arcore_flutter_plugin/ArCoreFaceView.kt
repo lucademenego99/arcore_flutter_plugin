@@ -50,7 +50,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private var faceRegionsRenderable: ModelRenderable? = null
     private var faceMeshTexture: Texture? = null
     private val faceNodeMap = HashMap<AugmentedFace, AugmentedFaceNode>()
-    // private var faceSceneUpdateListener: Scene.OnUpdateListener
+    private var faceSceneUpdateListener: Scene.OnUpdateListener
 
     private var eglManager: EglManager? = null
     private var processor: FrameProcessor? = null
@@ -70,10 +70,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     }
 
     init {
-        arSceneView?.session?.pause()
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
-        eglManager = EglManager(null)
+        eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
         processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
         converter = ExternalTextureConverter(eglManager!!.context)
@@ -82,7 +81,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
         previewDisplayView = SurfaceView(context)
 
-        /*faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
+        faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
                 //                if (faceRegionsRenderable == null || faceMeshTexture == null) {
                 // if (faceMeshTexture == null) {
@@ -132,7 +131,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
             }
         }
-        */
     }
 
     private fun getLandmarksDebugString(landmarks: LandmarkProto.NormalizedLandmarkList): String? {
@@ -150,7 +148,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             debugLog(call.method +"called on supported device")
             when (call.method) {
                 "init" -> {
-                    //arScenViewInit(call, result)
+                    arScenViewInit(call, result)
                 }
                 "loadMesh" -> {
                     val map = call.arguments as HashMap<*, *>
@@ -226,30 +224,28 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
                 "enableIrisTracking" -> {
 
-                    var cameraHelper = CameraXPreviewHelper()
+                    /*var cameraHelper = CameraXPreviewHelper()
                     cameraHelper.setOnCameraStartedListener { surfaceTexture: SurfaceTexture? ->
                         previewFrameTexture = surfaceTexture
                         // Make the display view visible to start showing the preview. This triggers the
                         // SurfaceHolder.Callback added to (the holder of) arSceneView.
                         previewDisplayView!!.visibility = View.VISIBLE
                     }
-                    cameraHelper.startCamera(activity, CameraHelper.CameraFacing.FRONT, null)
+                    cameraHelper.startCamera(activity, CameraHelper.CameraFacing.FRONT, null)*/
 
                     methodChannel2.invokeMethod("onGetIrisLandmarks", "PROCESSOR: ${processor}, SURFACE: ${arSceneView!!.holder.surface.isValid}")
                     val map = call.arguments as HashMap<*, *>
                     val displayWidth = map["width"] as? Int
                     val displayHeight = map["height"] as? Int
 
-                    previewDisplayView?.holder?.addCallback(object : SurfaceHolder.Callback {
+                    arSceneView!!.holder!!.addCallback(object : SurfaceHolder.Callback {
                         override fun surfaceCreated(holder: SurfaceHolder?) {
                             processor!!.videoSurfaceOutput.setSurface(holder!!.surface);
                         }
 
                         override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
-                            //converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displayWidth!!, displayHeight!!)
                             var viewSize = Size(width, height)
-                            var displaySize = cameraHelper.computeDisplaySizeFromViewSize(viewSize)
-                            converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displaySize.width, displaySize.height)
+                            converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displayWidth!!, displayHeight!!)
                         }
 
                         override fun surfaceDestroyed(holder: SurfaceHolder?) {
@@ -257,8 +253,10 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         }
                     })
 
-                    //val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
-                    val focalLength = cameraHelper.focalLengthPixels
+                    previewFrameTexture = arSceneView!!.session!!.sharedCamera.surfaceTexture
+                    arSceneView!!.visibility = View.VISIBLE
+
+                    val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
                     if (focalLength != null) {
                         var focalLenghtSidePacket = processor!!.packetCreator.createFloat32(focalLength)
                         val inputSidePackets = mapOf<String, Packet>(FOCAL_LENGTH_STREAM_NAME to focalLenghtSidePacket!!)
@@ -427,7 +425,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             return
         }
 
-        /*if (arSceneView?.session == null) {
+        if (arSceneView?.session == null) {
 
             // request camera permission if not already requested
             if (!ArCoreUtils.hasCameraPermission(activity)) {
@@ -459,7 +457,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             ArCoreUtils.displayError(activity, "Unable to get camera", ex)
             activity.finish()
             return
-        }*/
+        }
 
     }
 
