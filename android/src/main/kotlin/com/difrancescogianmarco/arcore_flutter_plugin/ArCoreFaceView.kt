@@ -280,7 +280,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     }
                     cameraHelper.startCamera(activity, CameraHelper.CameraFacing.FRONT, null)*/
 
-                    methodChannel2.invokeMethod("SURFACE: ${arSceneView!!.session!!.sharedCamera.surfaceTexture}")
+                    methodChannel2.invokeMethod("onGetIrisLandmarks", "SURFACE: ${arSceneView!!.session!!.sharedCamera.surfaceTexture}")
                     val map = call.arguments as HashMap<*, *>
                     val displayWidth = map["width"] as? Int
                     val displayHeight = map["height"] as? Int
