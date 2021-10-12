@@ -69,8 +69,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     init {
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
-        // eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
-        eglManager = EglManager(null)
+        eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
         processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
         converter = ExternalTextureConverter(eglManager!!.context)
@@ -221,8 +220,8 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     takeScreenshot(call, result);
                 }
                 "enableIrisTracking" -> {
-                    methodChannel2.invokeMethod("onGetIrisLandmarks", "PROCESSOR: ${processor}, SURFACE: ${arSceneView!!.holder.surface}")
-                    processor!!.videoSurfaceOutput.setSurface(arSceneView!!.holder.surface);
+                    methodChannel2.invokeMethod("onGetIrisLandmarks", "PROCESSOR: ${processor}, SURFACE: ${arSceneView!!.holder.surface.isValid}")
+                    // processor!!.videoSurfaceOutput.setSurface(arSceneView!!.holder.surface);
                     val map = call.arguments as HashMap<*, *>
                     val displayWidth = map["width"] as? Int
                     val displayHeight = map["height"] as? Int
