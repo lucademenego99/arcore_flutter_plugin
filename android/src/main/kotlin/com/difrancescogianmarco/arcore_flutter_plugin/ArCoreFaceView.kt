@@ -221,7 +221,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
                 "enableIrisTracking" -> {
                     methodChannel2.invokeMethod("onGetIrisLandmarks", "PROCESSOR: ${processor}, SURFACE: ${arSceneView!!.holder.surface.isValid}")
-                    // processor!!.videoSurfaceOutput.setSurface(arSceneView!!.holder.surface);
+                    processor!!.videoSurfaceOutput.setSurface(arSceneView!!.holder.surface)
                     val map = call.arguments as HashMap<*, *>
                     val displayWidth = map["width"] as? Int
                     val displayHeight = map["height"] as? Int
