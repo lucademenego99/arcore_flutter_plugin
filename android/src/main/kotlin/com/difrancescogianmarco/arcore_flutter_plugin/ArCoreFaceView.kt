@@ -40,6 +40,8 @@ import kotlin.math.atan
 import android.graphics.SurfaceTexture
 import android.view.*
 import android.view.SurfaceHolder
+import com.google.mediapipe.components.CameraHelper
+import com.google.mediapipe.components.CameraXPreviewHelper
 
 class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
     private val methodChannel2: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
@@ -220,8 +222,17 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     takeScreenshot(call, result);
                 }
                 "enableIrisTracking" -> {
+
+                    var cameraHelper = CameraXPreviewHelper()
+                    cameraHelper.setOnCameraStartedListener { surfaceTexture: SurfaceTexture? ->
+                        previewFrameTexture = surfaceTexture
+                        // Make the display view visible to start showing the preview. This triggers the
+                        // SurfaceHolder.Callback added to (the holder of) arSceneView.
+                        previewDisplayView!!.visibility = View.VISIBLE
+                    }
+                    cameraHelper.startCamera(activity, CameraHelper.CameraFacing.FRONT, null)
+
                     methodChannel2.invokeMethod("onGetIrisLandmarks", "PROCESSOR: ${processor}, SURFACE: ${arSceneView!!.holder.surface.isValid}")
-                    // processor!!.videoSurfaceOutput.setSurface(arSceneView!!.holder.surface)
                     val map = call.arguments as HashMap<*, *>
                     val displayWidth = map["width"] as? Int
                     val displayHeight = map["height"] as? Int
