@@ -72,7 +72,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         converter!!.setConsumer(processor!!)
 
         previewDisplayView = SurfaceView(context)
-        setupPreviewDisplayView()
 
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
@@ -123,37 +122,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     }
                 }
             }
-        }
-    }
-
-    private fun setupPreviewDisplayView() {
-        previewDisplayView!!.visibility = View.GONE
-        previewDisplayView!!
-                .holder
-                .addCallback(
-                        object : SurfaceHolder.Callback {
-                            override fun surfaceCreated(holder: SurfaceHolder) {
-                                processor!!.videoSurfaceOutput.setSurface(holder.surface)
-                            }
-
-                            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-                                onPreviewDisplaySurfaceChanged(holder, format, width, height)
-                            }
-
-                            override fun surfaceDestroyed(holder: SurfaceHolder) {
-                                processor!!.videoSurfaceOutput.setSurface(null)
-                            }
-                        })
-    }
-
-    protected fun onPreviewDisplaySurfaceChanged(
-            holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
-        previewFrameTexture = arSceneView?.session?.sharedCamera?.surfaceTexture
-        if (previewFrameTexture != null) {
-            converter!!.setSurfaceTextureAndAttachToGLContext(
-                    previewFrameTexture,
-                    arSceneView!!.width,
-                    arSceneView!!.height)
         }
     }
 
@@ -248,8 +216,22 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 }
                 "enableIrisTracking" -> {
                     val map = call.arguments as HashMap<*, *>
-                    val width = map["width"] as? Int
-                    val height = map["height"] as? Int
+                    val displayWidth = map["width"] as? Int
+                    val displayHeight = map["height"] as? Int
+
+                    arSceneView?.holder?.addCallback(object : SurfaceHolder.Callback {
+                        override fun surfaceCreated(holder: SurfaceHolder?) {
+                            converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displayWidth!!, displayHeight!!)
+                        }
+
+                        override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
+                            converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displayWidth!!, displayHeight!!)
+                        }
+
+                        override fun surfaceDestroyed(holder: SurfaceHolder?) {
+                            processor!!.videoSurfaceOutput.setSurface(null);
+                        }
+                    })
 
                     val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
                     if (focalLength != null) {
