@@ -38,6 +38,7 @@ import kotlin.math.PI
 import kotlin.math.atan
 
 import android.graphics.SurfaceTexture
+import android.util.Size
 import android.view.*
 import android.view.SurfaceHolder
 import com.google.mediapipe.components.CameraHelper
@@ -245,11 +246,14 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         }
 
                         override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
-                            converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displayWidth!!, displayHeight!!)
+                            //converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displayWidth!!, displayHeight!!)
+                            var viewSize = Size(width, height)
+                            var displaySize = cameraHelper.computeDisplaySizeFromViewSize(viewSize)
+                            converter!!.setSurfaceTextureAndAttachToGLContext(previewFrameTexture!!, displaySize.width, displaySize.height)
                         }
 
                         override fun surfaceDestroyed(holder: SurfaceHolder?) {
-                            processor!!.videoSurfaceOutput.setSurface(null);
+                            processor!!.videoSurfaceOutput.setSurface(null)
                         }
                     })
 
