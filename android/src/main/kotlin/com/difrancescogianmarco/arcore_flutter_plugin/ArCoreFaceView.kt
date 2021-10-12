@@ -73,13 +73,13 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         AndroidAssetUtil.initializeNativeAssetManager(context);
 
         eglManager = EglManager((EGLContext.getEGL() as (EGL10)).eglGetCurrentContext())
-        processor = FrameProcessor(context, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
+        processor = FrameProcessor(activity, eglManager!!.nativeContext, "iris_tracking_gpu.binarypb", "input_video","output_video")
         processor!!.videoSurfaceOutput.setFlipY(true)
         converter = ExternalTextureConverter(eglManager!!.context)
         converter!!.setFlipY(true)
         converter!!.setConsumer(processor!!)
 
-        previewDisplayView = SurfaceView(context)
+        previewDisplayView = SurfaceView(activity)
 
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
@@ -254,7 +254,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     })
 
                     previewFrameTexture = arSceneView!!.session!!.sharedCamera.surfaceTexture
-                    arSceneView!!.visibility = View.VISIBLE
+                    if (previewFrameTexture != null) {
+                        arSceneView!!.visibility = View.VISIBLE
+                    }
 
                     val focalLength = arSceneView?.arFrame?.camera?.imageIntrinsics?.focalLength?.get(0)
                     if (focalLength != null) {
