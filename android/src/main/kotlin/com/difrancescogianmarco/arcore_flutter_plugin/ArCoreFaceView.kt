@@ -416,7 +416,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             // This is important to make sure that the camera stream renders first so that
             // the face mesh occlusion works correctly.
             arSceneView?.cameraStreamRenderPriority = Renderable.RENDER_PRIORITY_FIRST
-            //arSceneView?.scene?.addOnUpdateListener(faceSceneUpdateListener)
+            arSceneView?.scene?.addOnUpdateListener(faceSceneUpdateListener)
         }
 
         result.success(null)
@@ -464,7 +464,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     }
 
     override fun onDestroy() {
-        //arSceneView?.scene?.removeOnUpdateListener(faceSceneUpdateListener)
+        arSceneView?.scene?.removeOnUpdateListener(faceSceneUpdateListener)
         super.onDestroy()
     }
 
