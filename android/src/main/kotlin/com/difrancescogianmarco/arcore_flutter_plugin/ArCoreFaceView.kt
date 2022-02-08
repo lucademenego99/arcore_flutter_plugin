@@ -202,66 +202,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         }
     }
 
-    override fun onResume() {
-        debugLog("onResume()")
-
-        if (arSceneView == null) {
-            return
-        }
-
-        // request camera permission if not already requested
-        if (!ArCoreUtils.hasCameraPermission(activity)) {
-            ArCoreUtils.requestCameraPermission(activity, RC_PERMISSIONS)
-        }
-
-        if (arSceneView?.session == null) {
-            debugLog("session is null")
-            try {
-                val session = ArCoreUtils.createArSession(activity, mUserRequestedInstall, true)
-                if (session == null) {
-                    // Ensures next invocation of requestInstall() will either return
-                    // INSTALLED or throw an exception.
-                    mUserRequestedInstall = false
-                    return
-                } else {
-                    val config = Config(session)
-                    config.augmentedFaceMode = Config.AugmentedFaceMode.MESH3D
-                    config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
-                    config.focusMode = Config.FocusMode.AUTO;
-                    session.configure(config)
-                    arSceneView?.setupSession(session)
-                }
-            } catch (ex: UnavailableUserDeclinedInstallationException) {
-                // Display an appropriate message to the user zand return gracefully.
-                Toast.makeText(activity, "TODO: handle exception " + ex.localizedMessage, Toast.LENGTH_LONG)
-                        .show();
-                return
-            } catch (e: UnavailableException) {
-                ArCoreUtils.handleSessionException(activity, e)
-                return
-            }
-        }
-
-        try {
-            arSceneView?.resume()
-        } catch (ex: CameraNotAvailableException) {
-            ArCoreUtils.displayError(activity, "Unable to get camera", ex)
-            activity.finish()
-            return
-        }
-
-        if (arSceneView?.session != null) {
-            //arSceneView!!.planeRenderer.isVisible = false
-            debugLog("Searching for surfaces")
-        }
-    }
-
-    override fun onPause() {
-        if (arSceneView != null) {
-            arSceneView?.pause()
-        }
-    }
-
     fun calculateWorldToCameraMatrix(modelmtx: FloatArray, viewmtx: FloatArray, prjmtx: FloatArray): FloatArray {
         val scaleFactor = 1.0f;
         val scaleMatrix = FloatArray(16)
