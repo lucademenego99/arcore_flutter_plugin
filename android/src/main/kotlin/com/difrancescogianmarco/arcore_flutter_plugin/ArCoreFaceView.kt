@@ -41,6 +41,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
     private val methodChannel2: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
     private val TAG: String = ArCoreFaceView::class.java.name
     private var faceRegionsRenderable: ModelRenderable? = null
+    private var mUserRequestedInstall = true
     private var faceMeshTexture: Texture? = null
     private val faceNodeMap = HashMap<AugmentedFace, AugmentedFaceNode>()
     private var faceSceneUpdateListener: Scene.OnUpdateListener
@@ -177,6 +178,14 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 "takeScreenshot" -> {
                     takeScreenshot(call, result);
                 }
+                "pause" -> {
+                    debugLog("pausing")
+                    onPause();
+                }
+                "resume" -> {
+                    debugLog("pausing")
+                    onResume();
+                }
                 "dispose" -> {
                     debugLog( " updateMaterials")
                     dispose()
@@ -188,6 +197,66 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         }else{
             debugLog("Impossible call " + call.method + " method on unsupported device")
             result.error("Unsupported Device","",null)
+        }
+    }
+
+    fun onResume() {
+        debugLog("onResume()")
+
+        if (arSceneView == null) {
+            return
+        }
+
+        // request camera permission if not already requested
+        if (!ArCoreUtils.hasCameraPermission(activity)) {
+            ArCoreUtils.requestCameraPermission(activity, RC_PERMISSIONS)
+        }
+
+        if (arSceneView?.session == null) {
+            debugLog("session is null")
+            try {
+                val session = ArCoreUtils.createArSession(activity, mUserRequestedInstall, isAugmentedFaces)
+                if (session == null) {
+                    // Ensures next invocation of requestInstall() will either return
+                    // INSTALLED or throw an exception.
+                    mUserRequestedInstall = false
+                    return
+                } else {
+                    val config = Config(session)
+                    config.augmentedFaceMode = Config.AugmentedFaceMode.MESH3D
+                    config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
+                    config.focusMode = Config.FocusMode.AUTO;
+                    session.configure(config)
+                    arSceneView?.setupSession(session)
+                }
+            } catch (ex: UnavailableUserDeclinedInstallationException) {
+                // Display an appropriate message to the user zand return gracefully.
+                Toast.makeText(activity, "TODO: handle exception " + ex.localizedMessage, Toast.LENGTH_LONG)
+                        .show();
+                return
+            } catch (e: UnavailableException) {
+                ArCoreUtils.handleSessionException(activity, e)
+                return
+            }
+        }
+
+        try {
+            arSceneView?.resume()
+        } catch (ex: CameraNotAvailableException) {
+            ArCoreUtils.displayError(activity, "Unable to get camera", ex)
+            activity.finish()
+            return
+        }
+
+        if (arSceneView?.session != null) {
+            //arSceneView!!.planeRenderer.isVisible = false
+            debugLog("Searching for surfaces")
+        }
+    }
+
+    fun onPause() {
+        if (arSceneView != null) {
+            arSceneView?.pause()
         }
     }
 

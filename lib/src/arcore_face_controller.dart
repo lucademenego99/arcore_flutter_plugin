@@ -103,6 +103,14 @@ class ArCoreFaceController {
     return _channel.invokeMethod('takeScreenshot');
   }
 
+  void pause() {
+    _channel?.invokeMethod<void>('pause');
+  }
+
+  void resume() {
+    _channel?.invokeMethod<void>('resume');
+  }
+
   void dispose() {
     _channel?.invokeMethod<void>('dispose');
   }
