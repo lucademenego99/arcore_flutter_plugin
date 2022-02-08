@@ -12,6 +12,7 @@ import com.google.ar.core.Config
 import com.google.ar.core.TrackingState
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.UnavailableException
+import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
 import com.google.ar.sceneform.ArSceneView
 import com.google.ar.sceneform.Scene
 import com.google.ar.sceneform.rendering.ModelRenderable
@@ -23,6 +24,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import kotlin.collections.HashMap
 import kotlin.math.*
+import android.widget.Toast
 
 import android.graphics.Bitmap
 import android.os.Environment
@@ -200,7 +202,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         }
     }
 
-    fun onResume() {
+    override fun onResume() {
         debugLog("onResume()")
 
         if (arSceneView == null) {
@@ -215,7 +217,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         if (arSceneView?.session == null) {
             debugLog("session is null")
             try {
-                val session = ArCoreUtils.createArSession(activity, mUserRequestedInstall, isAugmentedFaces)
+                val session = ArCoreUtils.createArSession(activity, mUserRequestedInstall, true)
                 if (session == null) {
                     // Ensures next invocation of requestInstall() will either return
                     // INSTALLED or throw an exception.
@@ -254,7 +256,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         }
     }
 
-    fun onPause() {
+    override fun onPause() {
         if (arSceneView != null) {
             arSceneView?.pause()
         }
