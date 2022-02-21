@@ -118,7 +118,7 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val focalLen = cameraIntrinsics?.getFocalLength()
                     // arSceneView?.arFrame?.camera?.getProjectionMatrix(dest, 0, 0.0001f, 2.0f)
                     // val res = 2 * atan(1/dest[5]) * 180/PI;
-                    val res = 2 * atan(imageDim!!.get(1)/(2*focalLen!!.get(1))) * 180/PI
+                    val res = 2 * atan(imageDim!!.get(0)/(2*focalLen!!.get(0))) * 180/PI
                     result.success(res)
                 }
                 "getMeshVertices" -> {
