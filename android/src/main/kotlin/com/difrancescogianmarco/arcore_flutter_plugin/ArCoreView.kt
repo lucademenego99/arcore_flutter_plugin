@@ -215,6 +215,10 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                 val textureBytes = map["textureBytes"] as ByteArray
                 loadMesh(textureBytes)
             }
+            "getFacesNodes" -> {
+                val list = faceNodeMap.toList().map { it.second }
+                methodChannel.invokeMethod("getFacesNodes", list[0].toString())
+            }
             "dispose" -> {
                 debugLog("Disposing ARCore now")
                 dispose()

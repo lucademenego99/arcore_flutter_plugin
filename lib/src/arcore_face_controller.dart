@@ -1,8 +1,14 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../arcore_flutter_plugin.dart';
+import 'package:vector_math/vector_math_64.dart';
+
+typedef FacesEventHandler = void Function(String transform);
 
 class ArCoreFaceController {
   ArCoreFaceController(
@@ -16,6 +22,8 @@ class ArCoreFaceController {
   final bool debug;
   late MethodChannel _channel;
   late StringResultHandler onError;
+
+  FacesEventHandler onGetFacesNodes;
 
   init() async {
     try {
@@ -35,6 +43,10 @@ class ArCoreFaceController {
       case 'onError':
         onError(call.arguments);
         break;
+      case 'onGetFacesNodes':
+        var matrixString = call.arguments.toString();
+        onGetFacesNodes(matrixString);
+        break;
       default:
         if (debug) {
           print('Unknown method ${call.method}');
@@ -49,6 +61,51 @@ class ArCoreFaceController {
       'textureBytes': textureBytes,
       'skin3DModelFilename': skin3DModelFilename
     });
+  }
+
+  Future<dynamic> getFOV() {
+    return _channel.invokeMethod('getFOV');
+  }
+
+  Future<List<Vector3>> getMeshVertices() async {
+    final rawVertices =
+        await (_channel.invokeMethod('getMeshVertices')) as List;
+
+    List<Vector3> result = [];
+    for (var i = 0; i < rawVertices.length - 1; i += 3) {
+      result.add(Vector3(rawVertices[i] as double, rawVertices[i + 1] as double,
+          rawVertices[i + 2] as double));
+    }
+    return result;
+  }
+
+  Future<List<int>> getMeshTriangleIndices() async {
+    final rawIndices =
+        await (_channel.invokeMethod('getMeshTriangleIndices')) as List;
+    List<int> result = rawIndices.map((e) => e as int).toList();
+    return result;
+  }
+
+  Future<dynamic> projectPoint(
+      Vector3 point, int screenWidth, int screenHeight) async {
+    final projectPoint = await _channel.invokeMethod('projectPoint', {
+      'point': [point.x, point.y, point.z].toList(),
+      'width': screenWidth,
+      'height': screenHeight
+    });
+    return projectPoint;
+  }
+
+  Future<void> takeScreenshot() async {
+    return _channel.invokeMethod('takeScreenshot');
+  }
+
+  void pause() {
+    _channel?.invokeMethod<void>('pause');
+  }
+
+  void resume() {
+    _channel?.invokeMethod<void>('resume');
   }
 
   void dispose() {

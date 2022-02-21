@@ -5,12 +5,14 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import android.opengl.Matrix.*
 import com.difrancescogianmarco.arcore_flutter_plugin.utils.ArCoreUtils
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Config
 import com.google.ar.core.TrackingState
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.UnavailableException
+import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
 import com.google.ar.sceneform.ArSceneView
 import com.google.ar.sceneform.Scene
 import com.google.ar.sceneform.rendering.ModelRenderable
@@ -21,11 +23,27 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import kotlin.collections.HashMap
+import kotlin.math.*
+import android.widget.Toast
+
+import android.graphics.Bitmap
+import android.os.Environment
+import android.os.Handler
+import android.view.PixelCopy
+import android.os.HandlerThread
+import android.content.ContextWrapper
+import java.io.FileOutputStream
+import java.io.File
+import java.io.IOException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
 
+    private val methodChannel2: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
     private val TAG: String = ArCoreFaceView::class.java.name
     private var faceRegionsRenderable: ModelRenderable? = null
+    private var mUserRequestedInstall = true
     private var faceMeshTexture: Texture? = null
     private val faceNodeMap = HashMap<AugmentedFace, AugmentedFaceNode>()
     private var faceSceneUpdateListener: Scene.OnUpdateListener
@@ -34,9 +52,9 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
             run {
                 //                if (faceRegionsRenderable == null || faceMeshTexture == null) {
-                if (faceMeshTexture == null) {
-                    return@OnUpdateListener
-                }
+                // if (faceMeshTexture == null) {
+                //     return@OnUpdateListener
+                // }
                 val faceList = arSceneView?.session?.getAllTrackables(AugmentedFace::class.java)
 
                 faceList?.let {
@@ -67,6 +85,17 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                             iter.remove()
                         }
                     }
+
+                    val list = faceNodeMap.toList().map { it.first }
+                    if (list.size > 0) {
+                        val dest = FloatArray(16)
+                        list[0].getCenterPose().toMatrix(dest, 0);
+                        val doubleArray = DoubleArray(dest.size)
+                        for ((i, a) in dest.withIndex()) {
+                            doubleArray[i] = a.toDouble()
+                        }
+                        methodChannel2.invokeMethod("onGetFacesNodes", doubleArray)
+                    }
                 }
             }
         }
@@ -85,6 +114,80 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                     val skin3DModelFilename = map["skin3DModelFilename"] as? String
                     loadMesh(textureBytes, skin3DModelFilename)
                 }
+                "getFOV" -> {
+                    val dest = FloatArray(16)
+                    arSceneView?.arFrame?.camera?.getProjectionMatrix(dest, 0, 0.0001f, 2.0f)
+                    val res = 2 * atan(1/dest[5]) * 180/PI;
+                    result.success(res)
+                }
+                "getMeshVertices" -> {
+                    val list = faceNodeMap.toList().map { it.first }
+                    if (list.size > 0) {
+                        val vertices = list[0].getMeshVertices();
+                        vertices.rewind();
+                        val size = vertices.remaining();
+                        val doubleArray = DoubleArray(size);
+                        for (i in 0..size-1) {
+                            doubleArray[i] = vertices.get().toDouble();
+                        }
+                        result.success(doubleArray);
+                    }
+                }
+                "getMeshTriangleIndices" -> {
+                    val list = faceNodeMap.toList().map { it.first }
+                    if (list.size > 0) {
+                        val vertices = list[0].getMeshTriangleIndices();
+                        val size = vertices.remaining();
+                        val intArray = IntArray(size)
+                        for (i in 0..size-1) {
+                            intArray[i] = vertices.get().toInt();
+                        }
+                        result.success(intArray)
+                    }
+                }
+                "projectPoint" -> {
+                    val map = call.arguments as HashMap<*, *>
+                    val point = map["point"] as? ArrayList<Float>
+                    val width = map["width"] as? Int
+                    val height = map["height"] as? Int
+
+                    if (point != null) {
+                        if (width != null && height != null) {
+                            val projmtx = FloatArray(16)
+                            arSceneView?.arFrame?.camera?.getProjectionMatrix(projmtx, 0, 0.0001f, 2.0f)
+
+                            val viewmtx = FloatArray(16)
+                            arSceneView?.arFrame?.camera?.getViewMatrix(viewmtx, 0)
+
+                            val anchorMatrix = FloatArray(16)
+                            setIdentityM(anchorMatrix, 0);
+                            anchorMatrix[12] = point.get(0);
+                            anchorMatrix[13] = point.get(1);
+                            anchorMatrix[14] = point.get(2);
+
+                            val worldToScreenMatrix = calculateWorldToCameraMatrix(anchorMatrix, viewmtx, projmtx);
+
+                            val anchor_2d = worldToScreen(width, height, worldToScreenMatrix);
+
+                            result.success(anchor_2d);
+                        } else {
+                            result.error("noImageDimensionsFound", "The user didn't provide image dimensions", null);
+                        }
+                    } else {
+                        result.error("noPointProvided", "The user didn't provide any point to project", null);
+                    }
+                }
+                "takeScreenshot" -> {
+                    takeScreenshot(call, result);
+                }
+                "pause" -> {
+                    debugLog("pausing")
+                    onPause();
+                }
+                "resume" -> {
+                    debugLog("pausing")
+                    onResume();
+                }
                 "dispose" -> {
                     debugLog( " updateMaterials")
                     dispose()
@@ -97,6 +200,47 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
             debugLog("Impossible call " + call.method + " method on unsupported device")
             result.error("Unsupported Device","",null)
         }
+    }
+
+    fun calculateWorldToCameraMatrix(modelmtx: FloatArray, viewmtx: FloatArray, prjmtx: FloatArray): FloatArray {
+        val scaleFactor = 1.0f;
+        val scaleMatrix = FloatArray(16)
+        val modelXscale = FloatArray(16)
+        val viewXmodelXscale = FloatArray(16)
+        val worldToScreenMatrix = FloatArray(16)
+
+        setIdentityM(scaleMatrix, 0);
+        scaleMatrix[0] = scaleFactor;
+        scaleMatrix[5] = scaleFactor;
+        scaleMatrix[10] = scaleFactor;
+
+        multiplyMM(modelXscale, 0, modelmtx, 0, scaleMatrix, 0);
+        multiplyMM(viewXmodelXscale, 0, viewmtx, 0, modelXscale, 0);
+        multiplyMM(worldToScreenMatrix, 0, prjmtx, 0, viewXmodelXscale, 0);
+
+        return worldToScreenMatrix;
+    }
+
+    fun worldToScreen(screenWidth: Int, screenHeight: Int, worldToCameraMatrix: FloatArray): DoubleArray {
+        val origin = FloatArray(4)
+        origin[0] = 0f;
+        origin[1] = 0f;
+        origin[2] = 0f;
+        origin[3] = 1f;
+
+        val ndcCoord = FloatArray(4)
+        multiplyMV(ndcCoord, 0,  worldToCameraMatrix, 0,  origin, 0);
+
+        if (ndcCoord[3] != 0.0f) {
+            ndcCoord[0] = (ndcCoord[0]/ndcCoord[3]).toFloat();
+            ndcCoord[1] = (ndcCoord[1]/ndcCoord[3]).toFloat();
+        }
+
+        val pos_2d = DoubleArray(2)
+        pos_2d[0] = (screenWidth  * ((ndcCoord[0] + 1.0)/2.0));
+        pos_2d[1] = (screenHeight * (( 1.0 - ndcCoord[1])/2.0));
+
+        return pos_2d;
     }
 
     fun loadMesh(textureBytes: ByteArray?, skin3DModelFilename: String?) {
@@ -119,6 +263,57 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                 .setSource(BitmapFactory.decodeByteArray(textureBytes, 0, textureBytes!!.size))
                 .build()
                 .thenAccept { texture -> faceMeshTexture = texture }
+    }
+
+    private fun takeScreenshot(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            // create bitmap screen capture
+
+            // Create a bitmap the size of the scene view.
+            val bitmap: Bitmap = Bitmap.createBitmap(arSceneView!!.getWidth(), arSceneView!!.getHeight(),
+                    Bitmap.Config.ARGB_8888)
+
+            // Create a handler thread to offload the processing of the image.
+            val handlerThread = HandlerThread("PixelCopier")
+            handlerThread.start()
+
+            // Make the request to copy.
+            PixelCopy.request(arSceneView!!, bitmap, { copyResult ->
+                if (copyResult === PixelCopy.SUCCESS) {
+                    try {
+                        saveBitmapToDisk(bitmap)
+                    } catch (e: IOException) {
+                        e.printStackTrace();
+                    }
+                }
+                handlerThread.quitSafely()
+            }, Handler(handlerThread.getLooper()))
+
+        } catch (e: Throwable) {
+            // Several error may come out with file handling or DOM
+            e.printStackTrace()
+        }
+        result.success(null)
+    }
+
+    @Throws(IOException::class)
+    fun saveBitmapToDisk(bitmap: Bitmap):String {
+        val now = "rawScreenshot"
+        // android/data/com.hswo.mvc_2021.hswo_mvc_2021_flutter_ar/files/
+        // activity.applicationContext.getFilesDir().toString() //doesnt work!!
+        // Environment.getExternalStorageDirectory()
+        // val mPath: String =  Environment.getExternalStorageDirectory().toString() + "/DCIM/" + now + ".jpg"
+        val mPath: String =  activity.applicationContext.getExternalFilesDir(null).toString() + "/" + now + ".png"
+        val mediaFile = File(mPath)
+        debugLog(mediaFile.toString())
+        //Log.i("path","fileoutputstream opened")
+        //Log.i("path",mPath)
+        val fileOutputStream = FileOutputStream(mediaFile)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+        fileOutputStream.flush()
+        fileOutputStream.close()
+
+        return mPath as String
     }
 
     private fun arScenViewInit(call: MethodCall, result: MethodChannel.Result) {
