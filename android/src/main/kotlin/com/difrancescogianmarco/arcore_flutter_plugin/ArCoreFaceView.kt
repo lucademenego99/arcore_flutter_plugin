@@ -63,8 +63,12 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
                         if (!faceNodeMap.containsKey(face)) {
                             val faceNode = AugmentedFaceNode(face)
                             faceNode.setParent(arSceneView?.scene)
-                            faceNode.faceRegionsRenderable = faceRegionsRenderable
-                            faceNode.faceMeshTexture = faceMeshTexture
+                            if (faceRegionsRenderable != null) {
+                                faceNode.faceRegionsRenderable = faceRegionsRenderable
+                            }
+                            if (faceMeshTexture != null) {
+                                faceNode.faceMeshTexture = faceMeshTexture
+                            }
                             faceNodeMap[face] = faceNode
 
                             // change assets on runtime
