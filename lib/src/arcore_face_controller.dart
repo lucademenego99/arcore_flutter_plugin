@@ -23,7 +23,7 @@ class ArCoreFaceController {
   late MethodChannel _channel;
   late StringResultHandler onError;
 
-  FacesEventHandler onGetFacesNodes = Function(String transform) => print("Function body not provided");
+  FacesEventHandler onGetFacesNodes = (String transform) => print("Function body not provided");
 
   init() async {
     try {
