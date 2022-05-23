@@ -44,30 +44,6 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
     init {
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
-
-            val frame = arSceneView?.arFrame;
-            if (frame != null) {
-                // Copy the camera stream to a bitmap
-                try {
-                    frame.acquireCameraImage().use { image ->
-                        require(image.format == ImageFormat.YUV_420_888) { "Expected image in YUV_420_888 format, got format " + image.format }
-                        image.planes.first().buffer
-                        val processedImageBytesGrayscale: ByteBuffer = edgeDetector.detect(
-                                image.width,
-                                image.height,
-                                image.planes[0].rowStride,
-                                image.planes[0].buffer)
-                        val bitmap = Bitmap.createBitmap(image.width, image.height,
-                                Bitmap.Config.ALPHA_8)
-                        processedImageBytesGrayscale.rewind()
-                        bitmap.copyPixelsFromBuffer(processedImageBytesGrayscale)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Exception copying image", e)
-                }
-            }
-
-
             run {
                 //                if (faceRegionsRenderable == null || faceMeshTexture == null) {
                 // if (faceMeshTexture == null) {
