@@ -23,7 +23,7 @@ class ArCoreFaceController {
   late MethodChannel _channel;
   late StringResultHandler onError;
 
-  FacesEventHandler onGetFacesNodes;
+  FacesEventHandler onGetFacesNodes = Function(String transform) => print("Function body not provided");
 
   init() async {
     try {
@@ -101,11 +101,11 @@ class ArCoreFaceController {
   }
 
   void pause() {
-    _channel?.invokeMethod<void>('pause');
+    _channel.invokeMethod<void>('pause');
   }
 
   void resume() {
-    _channel?.invokeMethod<void>('resume');
+    _channel.invokeMethod<void>('resume');
   }
 
   void dispose() {
