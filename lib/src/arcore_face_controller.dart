@@ -12,16 +12,16 @@ typedef FacesEventHandler = void Function(String transform);
 
 class ArCoreFaceController {
   ArCoreFaceController(
-      {int id, this.enableAugmentedFaces, this.debug = false}) {
+      {int? id, this.enableAugmentedFaces, this.debug = false}) {
     _channel = MethodChannel('arcore_flutter_plugin_$id');
     _channel.setMethodCallHandler(_handleMethodCalls);
     init();
   }
 
-  final bool enableAugmentedFaces;
+  final bool? enableAugmentedFaces;
   final bool debug;
-  MethodChannel _channel;
-  StringResultHandler onError;
+  late MethodChannel _channel;
+  late StringResultHandler onError;
 
   FacesEventHandler onGetFacesNodes;
 
@@ -41,9 +41,7 @@ class ArCoreFaceController {
     }
     switch (call.method) {
       case 'onError':
-        if (onError != null) {
-          onError(call.arguments);
-        }
+        onError(call.arguments);
         break;
       case 'onGetFacesNodes':
         var matrixString = call.arguments.toString();
@@ -58,8 +56,7 @@ class ArCoreFaceController {
   }
 
   Future<void> loadMesh(
-      {@required Uint8List textureBytes, String skin3DModelFilename}) {
-    assert(textureBytes != null);
+      {required Uint8List textureBytes, required String skin3DModelFilename}) {
     return _channel.invokeMethod('loadMesh', {
       'textureBytes': textureBytes,
       'skin3DModelFilename': skin3DModelFilename
@@ -112,6 +109,6 @@ class ArCoreFaceController {
   }
 
   void dispose() {
-    _channel?.invokeMethod<void>('dispose');
+    _channel.invokeMethod<void>('dispose');
   }
 }
