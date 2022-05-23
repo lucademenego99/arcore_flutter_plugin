@@ -2,18 +2,21 @@ package com.difrancescogianmarco.arcore_flutter_plugin
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import android.opengl.Matrix.*
+import android.os.Handler
+import android.os.HandlerThread
+import android.util.Log
+import android.view.PixelCopy
 import com.difrancescogianmarco.arcore_flutter_plugin.utils.ArCoreUtils
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Config
+import com.google.ar.core.ImageFormat
 import com.google.ar.core.TrackingState
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.UnavailableException
-import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
-import com.google.ar.sceneform.ArSceneView
 import com.google.ar.sceneform.Scene
 import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.Renderable
@@ -22,21 +25,12 @@ import com.google.ar.sceneform.ux.AugmentedFaceNode
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import kotlin.collections.HashMap
-import kotlin.math.*
-import android.widget.Toast
-
-import android.graphics.Bitmap
-import android.os.Environment
-import android.os.Handler
-import android.view.PixelCopy
-import android.os.HandlerThread
-import android.content.ContextWrapper
-import java.io.FileOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.nio.ByteBuffer
+import kotlin.math.*
+
 
 class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessenger, id: Int, debug: Boolean) : BaseArCoreView(activity, context, messenger, id, debug) {
 
@@ -50,6 +44,30 @@ class ArCoreFaceView(activity:Activity,context: Context, messenger: BinaryMessen
 
     init {
         faceSceneUpdateListener = Scene.OnUpdateListener { frameTime ->
+
+            val frame = arSceneView?.arFrame;
+            if (frame != null) {
+                // Copy the camera stream to a bitmap
+                try {
+                    frame.acquireCameraImage().use { image ->
+                        require(image.format == ImageFormat.YUV_420_888) { "Expected image in YUV_420_888 format, got format " + image.format }
+                        image.planes.first().buffer
+                        val processedImageBytesGrayscale: ByteBuffer = edgeDetector.detect(
+                                image.width,
+                                image.height,
+                                image.planes[0].rowStride,
+                                image.planes[0].buffer)
+                        val bitmap = Bitmap.createBitmap(image.width, image.height,
+                                Bitmap.Config.ALPHA_8)
+                        processedImageBytesGrayscale.rewind()
+                        bitmap.copyPixelsFromBuffer(processedImageBytesGrayscale)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Exception copying image", e)
+                }
+            }
+
+
             run {
                 //                if (faceRegionsRenderable == null || faceMeshTexture == null) {
                 // if (faceMeshTexture == null) {
